@@ -1,0 +1,722 @@
+# Transportation Portal - Development Guide
+
+**Project:** Transportation Data Portal (Planes, Trains, Automobiles)  
+**Environment:** Halo Labs Infrastructure  
+**Created:** 2025-10-01  
+**Purpose:** Complete setup and architecture guide for Transportation application
+
+---
+
+## Table of Contents
+1. [Project Overview](#project-overview)
+2. [Infrastructure Environment](#infrastructure-environment)
+3. [Application Architecture](#application-architecture)
+4. [Development Environment Setup](#development-environment-setup)
+5. [Container Strategy](#container-strategy)
+6. [Deployment Architecture](#deployment-architecture)
+7. [Source Control Strategy](#source-control-strategy)
+8. [Service Configurations](#service-configurations)
+9. [Development Workflow](#development-workflow)
+10. [Quick Reference](#quick-reference)
+
+---
+
+## Project Overview
+
+### Application Purpose
+Web-based portal for exploring and analyzing transportation data across three categories:
+- **Planes:** Aircraft data with manufacturer, model, registration details
+- **Trains:** Railway data with operator, route, type information
+- **Automobiles:** Vehicle data with manufacturer, model, VIN details
+
+### Technology Stack
+- **Frontend:** Angular 13 (TypeScript)
+- **Backend API:** Node.js with Express.js
+- **Data Store:** Elasticsearch (existing platform service)
+- **Container Runtime:** Podman (build) → K3s containerd (deploy)
+- **Orchestration:** Kubernetes (K3s cluster)
+
+### Key Features
+- User authentication (JWT-based)
+- Advanced search with filtering and facets
+- Interactive data visualization (charts/histograms)
+- Saved searches and user preferences
+- URL-based state management (shareable links)
+- Export functionality (CSV, JSON)
+
+---
+
+## Infrastructure Environment
+
+### Cluster Configuration
+```yaml
+Kubernetes: K3s cluster (v1.33.x)
+Nodes:
+  - Loki (192.168.0.110): Control plane
+  - Thor (192.168.0.244): Worker node with GPU
+Container Runtime: containerd
+Ingress Controller: Traefik v3
+Storage Class: local-path (default)
+Internal Domain: *.minilab
+```
+
+### Available Infrastructure Services
+```yaml
+Elasticsearch: 
+  URL: http://thor:30398
+  Namespace: data
+  Status: Platform service (shared)
+  
+GitLab CE:
+  URL: http://gitlab.minilab
+  Namespace: gitlab
+  Group: halo
+  
+Monitoring:
+  Prometheus: http://192.168.0.244:30090
+  Grafana: http://192.168.0.244:30300
+```
+
+### Storage Configuration
+**Thor Node (Primary for App Workloads):**
+- `/mnt/data` - 1.4TB, 11% used
+- PVC provisioning via local-path StorageClass
+- Node selector: `kubernetes.io/hostname: thor`
+
+**Loki Node (Control Plane):**
+- `/srv` - 1.7TB, 6% used
+- Hosts control plane services
+
+---
+
+## Application Architecture
+
+### Multi-Container Design
+
+```
+┌─────────────────────────────────────────────┐
+│           Browser (Client)                  │
+└─────────────────────────────────────────────┘
+                    ↓ HTTP/HTTPS
+┌─────────────────────────────────────────────┐
+│        Traefik Ingress Controller           │
+│    http://transportation.minilab            │
+└─────────────────────────────────────────────┘
+                    ↓
+    ┌───────────────┴───────────────┐
+    ↓                               ↓
+┌──────────────────┐    ┌──────────────────────┐
+│  Angular Frontend│    │   Node.js API Server │
+│   (nginx)        │    │   (Express.js)       │
+│                  │    │                      │
+│  Port: 80        │    │   Port: 3000         │
+│  Replicas: 2     │    │   Replicas: 2        │
+└──────────────────┘    └──────────────────────┘
+                                  ↓
+                    ┌─────────────────────────┐
+                    │  Elasticsearch Service  │
+                    │  (Platform - Existing)  │
+                    │                         │
+                    │  thor:30398             │
+                    └─────────────────────────┘
+```
+
+### Container Breakdown
+
+**1. Frontend Container (transport-frontend)**
+- **Base Image:** node:18-alpine (build) → nginx:alpine (runtime)
+- **Framework:** Angular 13
+- **Build:** Multi-stage Dockerfile
+- **Serves:** Static compiled Angular app
+- **Port:** 80
+
+**2. Backend API Container (transport-api)**
+- **Base Image:** node:18-alpine
+- **Framework:** Express.js
+- **Features:** 
+  - REST API endpoints
+  - JWT authentication
+  - Elasticsearch integration
+  - Request validation
+  - Error handling
+- **Port:** 3000
+
+**3. Data Ingestion Container (transport-ingestion)** *(Optional/Future)*
+- **Base Image:** python:3.11-slim
+- **Purpose:** Scheduled data collection from external sources
+- **Type:** CronJob
+- **Storage:** Writes to Elasticsearch
+
+---
+
+## Development Environment Setup
+
+### Directory Structure
+```
+Thor: /home/odin/projects/transportation/
+├── frontend/                    # Angular 13 application
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── core/           # Services, guards, interceptors
+│   │   │   ├── shared/         # Shared components
+│   │   │   ├── features/       # Feature modules
+│   │   │   │   ├── dashboard/
+│   │   │   │   ├── planes/
+│   │   │   │   ├── trains/
+│   │   │   │   ├── automobiles/
+│   │   │   │   └── user/
+│   │   │   └── app.module.ts
+│   │   ├── assets/
+│   │   └── environments/
+│   ├── angular.json
+│   ├── package.json
+│   ├── Dockerfile
+│   └── .dockerignore
+│
+├── backend/                     # Node.js API
+│   ├── src/
+│   │   ├── config/             # Configuration files
+│   │   ├── middleware/         # Express middleware
+│   │   ├── routes/             # API routes
+│   │   ├── controllers/        # Route controllers
+│   │   ├── services/           # Business logic
+│   │   ├── models/             # Data models
+│   │   ├── utils/              # Helper functions
+│   │   └── app.js
+│   ├── tests/
+│   ├── package.json
+│   ├── Dockerfile
+│   └── .dockerignore
+│
+├── k8s/                         # Kubernetes manifests
+│   ├── namespace.yaml
+│   ├── frontend-deployment.yaml
+│   ├── frontend-service.yaml
+│   ├── frontend-ingress.yaml
+│   ├── api-deployment.yaml
+│   ├── api-service.yaml
+│   ├── api-ingress.yaml
+│   ├── configmap.yaml
+│   └── secrets.yaml
+│
+├── docs/                        # Project documentation
+│   ├── API.md
+│   ├── DEPLOYMENT.md
+│   └── ARCHITECTURE.md
+│
+├── .gitlab-ci.yml              # CI/CD pipeline
+├── docker-compose.yml          # Local development
+└── README.md
+```
+
+### Required Tools (Already Available on Thor)
+- Node.js 18+ ✓
+- Angular CLI 13 (install: `npm install -g @angular/cli@13`)
+- Podman ✓
+- kubectl ✓
+- Git ✓
+
+---
+
+## Container Strategy
+
+### Build Process (Podman on Thor)
+
+**Frontend Container:**
+```dockerfile
+# Multi-stage build
+FROM node:18-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build -- --configuration production
+
+FROM nginx:alpine
+COPY --from=builder /app/dist/transportation /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/nginx.conf
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+**Backend Container:**
+```dockerfile
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY . .
+EXPOSE 3000
+CMD ["node", "src/app.js"]
+```
+
+### Build Commands
+```bash
+# Frontend
+cd /home/odin/projects/transportation/frontend
+podman build -t localhost/transport-frontend:v1.0.0 .
+
+# Backend
+cd /home/odin/projects/transportation/backend
+podman build -t localhost/transport-api:v1.0.0 .
+
+# Export
+podman save localhost/transport-frontend:v1.0.0 -o transport-frontend.tar
+podman save localhost/transport-api:v1.0.0 -o transport-api.tar
+
+# Import to K3s
+sudo k3s ctr images import transport-frontend.tar
+sudo k3s ctr images import transport-api.tar
+```
+
+---
+
+## Deployment Architecture
+
+### Kubernetes Namespace
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: transportation
+  labels:
+    name: transportation
+    app.kubernetes.io/name: transportation-portal
+```
+
+### Frontend Deployment
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: transport-frontend
+  namespace: transportation
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: transport-frontend
+  template:
+    metadata:
+      labels:
+        app: transport-frontend
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: thor
+      containers:
+      - name: frontend
+        image: localhost/transport-frontend:v1.0.0
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+```
+
+### API Deployment
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: transport-api
+  namespace: transportation
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: transport-api
+  template:
+    metadata:
+      labels:
+        app: transport-api
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
+        prometheus.io/path: "/metrics"
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: thor
+      containers:
+      - name: api
+        image: localhost/transport-api:v1.0.0
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: ELASTICSEARCH_URL
+          value: "http://elasticsearch.data.svc.cluster.local:9200"
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: transport-secrets
+              key: jwt-secret
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+```
+
+### Ingress Configuration
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: transport-ingress
+  namespace: transportation
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: transportation.minilab
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: transport-api
+            port:
+              number: 3000
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: transport-frontend
+            port:
+              number: 80
+```
+
+---
+
+## Source Control Strategy
+
+### Repository Structure
+
+**Primary Repository (GitLab - Self-hosted):**
+```
+GitLab: http://gitlab.minilab/halo/transportation-portal
+Branch Strategy:
+  - main: Production-ready code
+  - develop: Integration branch
+  - feature/*: Feature branches
+  - hotfix/*: Emergency fixes
+```
+
+**Backup Repository (GitHub):**
+```
+GitHub: https://github.com/<your-username>/transportation-portal
+Purpose: Backup and collaboration
+Sync: Manual push to both remotes
+```
+
+### Git Configuration
+```bash
+# On Thor
+cd /home/odin/projects/transportation
+
+# Initialize repository
+git init
+
+# Add remotes
+git remote add origin http://gitlab.minilab/halo/transportation-portal.git
+git remote add github https://github.com/<username>/transportation-portal.git
+
+# Push to both
+git push origin main
+git push github main
+```
+
+### .gitignore
+```
+# Dependencies
+node_modules/
+npm-debug.log*
+
+# Build outputs
+dist/
+build/
+*.tar
+
+# Environment files
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Angular
+/.angular/cache
+```
+
+---
+
+## Service Configurations
+
+### Elasticsearch Integration
+
+**Index Templates Required:**
+```json
+{
+  "index_patterns": ["planes-*", "trains-*", "automobiles-*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0
+    },
+    "mappings": {
+      "properties": {
+        "ingest_date": { "type": "date" },
+        "category": { "type": "keyword" },
+        "manufacturer": { "type": "keyword" },
+        "model": { "type": "text" },
+        "year": { "type": "integer" },
+        "country": { "type": "keyword" }
+      }
+    }
+  }
+}
+```
+
+**Backend Connection:**
+```javascript
+// backend/src/config/elasticsearch.js
+const { Client } = require('@elastic/elasticsearch');
+
+const client = new Client({
+  node: process.env.ELASTICSEARCH_URL || 'http://elasticsearch.data.svc.cluster.local:9200'
+});
+
+module.exports = client;
+```
+
+### Environment Configuration
+
+**Frontend (environment.ts):**
+```typescript
+export const environment = {
+  production: false,
+  apiUrl: 'http://localhost:3000/api',
+  elasticsearchUrl: 'http://thor:30398'
+};
+```
+
+**Frontend (environment.prod.ts):**
+```typescript
+export const environment = {
+  production: true,
+  apiUrl: '/api',
+  elasticsearchUrl: 'http://elasticsearch.data.svc.cluster.local:9200'
+};
+```
+
+**Backend (.env):**
+```env
+NODE_ENV=production
+PORT=3000
+ELASTICSEARCH_URL=http://elasticsearch.data.svc.cluster.local:9200
+JWT_SECRET=<generated-secret>
+JWT_EXPIRY=15m
+REFRESH_TOKEN_EXPIRY=7d
+```
+
+### DNS Configuration
+Add to `/etc/hosts` on both nodes and workstation:
+```
+192.168.0.110 transportation.minilab
+```
+
+---
+
+## Development Workflow
+
+### Initial Setup (One-time)
+```bash
+# 1. Create project directory on Thor
+mkdir -p /home/odin/projects/transportation
+cd /home/odin/projects/transportation
+
+# 2. Create Angular 13 application
+npm install -g @angular/cli@13
+ng new frontend --routing --style=scss
+
+# 3. Create Node.js backend
+mkdir backend && cd backend
+npm init -y
+npm install express @elastic/elasticsearch jsonwebtoken bcryptjs cors dotenv
+
+# 4. Initialize Git
+git init
+git remote add origin http://gitlab.minilab/halo/transportation-portal.git
+git remote add github https://github.com/<username>/transportation-portal.git
+```
+
+### Development Cycle
+```bash
+# 1. Develop locally
+cd /home/odin/projects/transportation/frontend
+ng serve --host 0.0.0.0 --port 4200
+
+cd /home/odin/projects/transportation/backend
+npm run dev
+
+# 2. Test locally
+# Access: http://192.168.0.244:4200
+
+# 3. Build containers
+podman build -t localhost/transport-frontend:v1.0.0 ./frontend
+podman build -t localhost/transport-api:v1.0.0 ./backend
+
+# 4. Export and import
+podman save localhost/transport-frontend:v1.0.0 -o transport-frontend.tar
+sudo k3s ctr images import transport-frontend.tar
+
+# 5. Deploy to K3s
+kubectl apply -f k8s/
+
+# 6. Verify deployment
+kubectl get pods -n transportation
+kubectl logs -f deployment/transport-frontend -n transportation
+
+# 7. Access application
+# http://transportation.minilab
+```
+
+### Updating Application
+```bash
+# 1. Make code changes
+# 2. Increment version tag
+# 3. Rebuild containers with new tag
+# 4. Import to K3s
+# 5. Update deployment YAML with new image tag
+# 6. Apply changes
+kubectl apply -f k8s/frontend-deployment.yaml
+kubectl rollout status deployment/transport-frontend -n transportation
+```
+
+---
+
+## Quick Reference
+
+### Essential Commands
+
+**Health Checks:**
+```bash
+# Cluster status
+kubectl get nodes
+
+# Application status
+kubectl get pods -n transportation
+kubectl get svc -n transportation
+kubectl get ingress -n transportation
+
+# Logs
+kubectl logs -f deployment/transport-frontend -n transportation
+kubectl logs -f deployment/transport-api -n transportation
+
+# Port forwarding (debugging)
+kubectl port-forward -n transportation svc/transport-api 3000:3000
+```
+
+**Container Management:**
+```bash
+# List Podman images
+podman images
+
+# List K3s images
+sudo k3s ctr images list | grep transport
+
+# Remove old images
+podman rmi localhost/transport-frontend:old-tag
+sudo k3s ctr images rm localhost/transport-frontend:old-tag
+```
+
+**Service Verification:**
+```bash
+# Test ingress
+curl -I http://transportation.minilab
+
+# Test API directly
+curl http://transportation.minilab/api/health
+
+# Check Elasticsearch
+curl http://thor:30398/_cluster/health
+```
+
+### Access URLs
+- **Application:** http://transportation.minilab
+- **API:** http://transportation.minilab/api
+- **API Docs:** http://transportation.minilab/api/docs *(if implemented)*
+- **GitLab:** http://gitlab.minilab/halo/transportation-portal
+- **Elasticsearch:** http://thor:30398
+
+### Troubleshooting
+
+**Pod won't start:**
+```bash
+kubectl describe pod <pod-name> -n transportation
+kubectl logs <pod-name> -n transportation
+```
+
+**Image not found:**
+```bash
+# Verify image exists
+sudo k3s ctr images list | grep transport
+
+# Re-import if needed
+sudo k3s ctr images import transport-frontend.tar
+```
+
+**Ingress not working:**
+```bash
+# Check ingress configuration
+kubectl get ingress -n transportation
+kubectl describe ingress transport-ingress -n transportation
+
+# Verify Traefik
+kubectl get pods -n kube-system | grep traefik
+```
+
+**Can't connect to Elasticsearch:**
+```bash
+# Test from pod
+kubectl exec -it deployment/transport-api -n transportation -- sh
+curl http://elasticsearch.data.svc.cluster.local:9200
+
+# Test from Thor
+curl http://thor:30398
+```
+
+---
+
+## Next Steps
+
+1. **Create GitLab project:** http://gitlab.minilab/halo/transportation-portal
+2. **Initialize Angular 13 application**
+3. **Create Node.js backend structure**
+4. **Set up Dockerfiles**
+5. **Create Kubernetes manifests**
+6. **Build and deploy initial containers**
+7. **Configure Elasticsearch indices**
+8. **Implement authentication**
+9. **Build search functionality**
+10. **Add monitoring/metrics**
+
+---
+
+*End of Transportation Portal Development Guide*
