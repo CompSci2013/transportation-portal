@@ -1,0 +1,138 @@
+<div class="search-container">
+  <h2>Search Aircraft Registry</h2>
+  
+  <!-- Filter Form -->
+  <div class="filter-panel">
+    <h3>Filters</h3>
+    <div class="filter-grid">
+      <div class="filter-field">
+        <label for="manufacturer">Manufacturer</label>
+        <input 
+          type="text" 
+          id="manufacturer" 
+          [(ngModel)]="manufacturer" 
+          placeholder="e.g., Cessna, Boeing"
+          (keyup.enter)="searchAircraft()"
+        />
+      </div>
+      
+      <div class="filter-field">
+        <label for="model">Model</label>
+        <input 
+          type="text" 
+          id="model" 
+          [(ngModel)]="model" 
+          placeholder="e.g., 172, 737"
+          (keyup.enter)="searchAircraft()"
+        />
+      </div>
+      
+      <div class="filter-field">
+        <label for="yearMin">Year From</label>
+        <input 
+          type="number" 
+          id="yearMin" 
+          [(ngModel)]="yearMin" 
+          placeholder="1900"
+          (keyup.enter)="searchAircraft()"
+        />
+      </div>
+      
+      <div class="filter-field">
+        <label for="yearMax">Year To</label>
+        <input 
+          type="number" 
+          id="yearMax" 
+          [(ngModel)]="yearMax" 
+          placeholder="2025"
+          (keyup.enter)="searchAircraft()"
+        />
+      </div>
+      
+      <div class="filter-field">
+        <label for="state">State</label>
+        <input 
+          type="text" 
+          id="state" 
+          [(ngModel)]="state" 
+          placeholder="e.g., CA, TX"
+          maxlength="2"
+          (keyup.enter)="searchAircraft()"
+        />
+      </div>
+    </div>
+    
+    <div class="filter-actions">
+      <button class="btn btn-primary" (click)="searchAircraft()">Search</button>
+      <button class="btn btn-secondary" (click)="resetFilters()">Reset</button>
+    </div>
+  </div>
+  
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading">
+    <p>Loading aircraft data...</p>
+  </div>
+  
+  <!-- Error State -->
+  <div *ngIf="error" class="error">
+    <p>{{ error }}</p>
+  </div>
+  
+  <!-- Results -->
+  <div *ngIf="!loading && !error" class="results-container">
+    <div class="results-header">
+      <h3>Results</h3>
+      <p class="results-count">{{ displayedRange }}</p>
+    </div>
+    
+    <div *ngIf="aircraft.length === 0" class="no-results">
+      <p>No aircraft found matching your criteria.</p>
+    </div>
+    
+    <table *ngIf="aircraft.length > 0" class="results-table">
+      <thead>
+        <tr>
+          <th>Registration</th>
+          <th>Manufacturer</th>
+          <th>Model</th>
+          <th>Year</th>
+          <th>Type</th>
+          <th>State</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let a of aircraft">
+          <td>{{ a.registration_id || 'N/A' }}</td>
+          <td>{{ a.manufacturer || 'Unknown' }}</td>
+          <td>{{ a.model || 'Unknown' }}</td>
+          <td>{{ a.year || 'N/A' }}</td>
+          <td>{{ a.category || 'N/A' }}</td>
+          <td>{{ a.location?.state_province || 'N/A' }}</td>
+          <td>
+            <a [routerLink]="['/aircraft', a.transport_id]" class="btn-link">View Details</a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <!-- Pagination -->
+    <div *ngIf="aircraft.length > 0" class="pagination">
+      <button 
+        class="btn btn-secondary" 
+        (click)="previousPage()" 
+        [disabled]="!hasPreviousPage"
+      >
+        Previous
+      </button>
+      <span class="page-info">Page {{ currentPage + 1 }}</span>
+      <button 
+        class="btn btn-secondary" 
+        (click)="nextPage()" 
+        [disabled]="!hasNextPage"
+      >
+        Next
+      </button>
+    </div>
+  </div>
+</div>
