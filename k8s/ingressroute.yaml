@@ -1,0 +1,14 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: transport-api
+  namespace: transportation
+spec:
+  entryPoints:
+    - web
+  routes:
+  - match: Host(`transportation.minilab`)
+    kind: Rule
+    services:
+    - name: transport-api
+      port: 3000
