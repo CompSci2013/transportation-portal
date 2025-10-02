@@ -1,3 +1,4 @@
+Nice, now what if a page contains multiple components that are 'aware' of each other. Components AA, BB, and CC. AA makes a selection and related components BB and CC update their views accordingly? Does the professional foundation above already account for this scenario?
 Yes, the state management foundation **already accounts for this scenario perfectly**. Let me explain how:
 
 ## How Multi-Component Communication Works
