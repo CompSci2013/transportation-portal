@@ -1,0 +1,32 @@
+# Navigate to project directory
+cd /home/odin/projects/transportation/etl
+
+# Start the container
+podman run -it --rm \
+  --name transport-etl-dev \
+  --network host \
+  -v /home/odin/projects/transportation/etl:/app:z \
+  localhost/transport-etl:dev
+  
+  
+  # Test with small batch (5000 records)
+python3 run_etl.py --source faa --limit 5000
+
+# Process all FAA aircraft data (~300,000 records)
+python3 run_etl.py --source faa --full
+
+# Force re-download of source data
+python3 run_etl.py --source faa --force-download --limit 1000
+
+
+# OUTSIDE THE CONTAINER
+# Check cluster health
+curl http://thor:30398/_cluster/health?pretty
+
+# Count documents
+curl http://thor:30398/transport-unified/_count?pretty
+
+# Search for planes
+curl -X POST http://thor:30398/transport-unified/_search?pretty \
+  -H 'Content-Type: application/json' \
+  -d '{"query": {"term": {"transport_type": "plane"}}, "size": 5}'
