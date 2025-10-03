@@ -50,11 +50,11 @@
       </div>
       
       <div class="filter-field">
-        <label for="state">State</label>
+        <label for="state_province">State</label>
         <input 
           type="text" 
-          id="state" 
-          [(ngModel)]="state" 
+          id="state_province" 
+          [(ngModel)]="state_province" 
           placeholder="e.g., CA, TX"
           maxlength="2"
           (keyup.enter)="searchAircraft()"
@@ -86,7 +86,7 @@
     </div>
     
     <div *ngIf="aircraft.length === 0" class="no-results">
-      <p>No aircraft found matching your criteria.</p>
+      <p>No aircraft found matching your criteria. Try adjusting your filters.</p>
     </div>
     
     <table *ngIf="aircraft.length > 0" class="results-table">
@@ -125,7 +125,7 @@
       >
         Previous
       </button>
-      <span class="page-info">Page {{ currentPage + 1 }}</span>
+      <span class="page-info">Page {{ currentPage }}</span>
       <button 
         class="btn btn-secondary" 
         (click)="nextPage()" 
