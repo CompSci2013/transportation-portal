@@ -1,87 +1,58 @@
 import { Injectable, OnDestroy } from '@angular/core';
-import { BehaviorSubject, Observable, Subject } from 'rxjs';
-import { map, distinctUntilChanged, takeUntil, take } from 'rxjs/operators';
-import { SearchFilters, SearchState, SearchStatistics, SearchResponse } from '../../models';
+import { Router, NavigationEnd } from '@angular/router';
+import { BehaviorSubject, Subject } from 'rxjs';
+import { map, distinctUntilChanged, takeUntil, filter } from 'rxjs/operators';
+import { SearchState, SearchFilters, SearchStatistics } from '../../models';
 import { RouteStateService } from './route-state.service';
-import { StorageService } from './storage.service';
 import { ApiService } from '../../services/api.service';
 
-/**
- * StateManagementService
- * 
- * Core state orchestrator for the application
- * - URL is single source of truth
- * - Coordinates between RouteState, Storage, and API services
- * - Provides reactive state observables for components
- */
 @Injectable({
   providedIn: 'root'
 })
 export class StateManagementService implements OnDestroy {
   private destroy$ = new Subject<void>();
-  
+
   // ========== PRIVATE STATE ==========
-  
   private stateSubject = new BehaviorSubject<SearchState>(this.getInitialState());
-  
+
   // ========== PUBLIC OBSERVABLES ==========
-  
   public state$ = this.stateSubject.asObservable();
-  
+
   public filters$ = this.state$.pipe(
     map(state => state.filters),
     distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b))
   );
-  
+
   public results$ = this.state$.pipe(
     map(state => state.results),
     distinctUntilChanged()
   );
-  
+
   public statistics$ = this.state$.pipe(
     map(state => state.statistics),
     distinctUntilChanged()
   );
-  
+
   public loading$ = this.state$.pipe(
     map(state => state.loading),
-    distinctUntilChanged()
-  );
-  
-  public error$ = this.state$.pipe(
-    map(state => state.error),
-    distinctUntilChanged()
-  );
-  
-  public hasSearched$ = this.state$.pipe(
-    map(state => state.hasSearched),
-    distinctUntilChanged()
-  );
-  
-  public totalResults$ = this.state$.pipe(
-    map(state => state.totalResults),
-    distinctUntilChanged()
-  );
-  
-  public selectedManufacturer$ = this.state$.pipe(
-    map(state => state.selectedManufacturer),
     distinctUntilChanged()
   );
 
   constructor(
     private routeState: RouteStateService,
-    private storage: StorageService,
-    private api: ApiService
+    private api: ApiService,
+    private router: Router
   ) {
     this.initializeFromUrl();
     this.watchUrlChanges();
   }
 
-  // ========== INITIALIZATION ==========
-  
   private getInitialState(): SearchState {
     return {
-      filters: {},
+      filters: {
+        page: 1,
+        size: 20
+      },
       results: [],
       statistics: null,
       loading: false,
@@ -91,76 +62,121 @@ export class StateManagementService implements OnDestroy {
       selectedManufacturer: null
     };
   }
-  
+
   private initializeFromUrl(): void {
-    const urlParams = this.routeState.getCurrentParams();
-    const filters = this.routeState.paramsToFilters(urlParams);
-    
-    // Merge with default page size (could load from user preferences later)
-    const mergedFilters: SearchFilters = {
-      page: filters.page || 1,
-      size: filters.size || 20,
-      ...filters
-    };
-    
-    this.updateState({ filters: mergedFilters });
-    
-    // Auto-execute search if URL has searchable params
-    if (this.hasSearchableFilters(mergedFilters)) {
+    const params = this.routeState.getCurrentParams();
+    const filters = this.routeState.paramsToFilters(params);
+    const selectedManufacturer = params['mfr'] || null;
+
+    this.updateState({
+      filters,
+      selectedManufacturer
+    });
+
+    if (this.hasSearchableFilters(filters)) {
       this.performSearch();
     }
   }
-  
+
   private watchUrlChanges(): void {
-    this.routeState.queryParams$.pipe(
-      takeUntil(this.destroy$),
-      map(params => this.routeState.paramsToFilters(params)),
-      distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b))
-    ).subscribe(filters => {
-      this.updateState({ filters });
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd),
+      takeUntil(this.destroy$)
+    ).subscribe(() => {
+      const params = this.routeState.getCurrentParams();
+      const filters = this.routeState.paramsToFilters(params);
+      const selectedManufacturer = params['mfr'] || null;
       
-      if (this.hasSearchableFilters(filters)) {
-        this.performSearch();
-      } else {
-        this.resetResults();
+      const currentState = this.stateSubject.value;
+      
+      // Only update if something actually changed
+      if (JSON.stringify(filters) !== JSON.stringify(currentState.filters) ||
+          selectedManufacturer !== currentState.selectedManufacturer) {
+        
+        this.updateState({ 
+          filters,
+          selectedManufacturer 
+        });
+
+        if (this.hasSearchableFilters(filters)) {
+          this.performSearch();
+        } else {
+          this.resetResults();
+        }
       }
     });
   }
-  
+
   private hasSearchableFilters(filters: SearchFilters): boolean {
-    const searchableKeys = ['q', 'type', 'manufacturer', 'model', 'yearMin', 'yearMax', 'state'];
-    return searchableKeys.some(key => filters[key as keyof SearchFilters] !== undefined);
+    return !!(
+      filters.q ||
+      filters.manufacturer ||
+      filters.model ||
+      filters.yearMin ||
+      filters.yearMax ||
+      filters.state ||
+      filters.status
+    );
   }
 
-  // ========== PUBLIC API ==========
-  
-  /**
-   * Update filters and sync to URL
-   * Called by search form
-   */
-  updateFilters(filters: SearchFilters): void {
-    const updatedFilters = { ...filters, page: 1 };
-    this.updateState({ filters: updatedFilters });
-    this.syncStateToUrl();
+  private updateState(updates: Partial<SearchState>): void {
+    const current = this.stateSubject.value;
+    this.stateSubject.next({ ...current, ...updates });
   }
-  
-  /**
-   * Execute search with current filters
-   * Called explicitly by Search button or automatically by URL changes
-   */
-  performSearch(): void {
-    const filters = this.stateSubject.value.filters;
+
+  private syncStateToUrl(): void {
+    const state = this.stateSubject.value;
+    const params = this.routeState.filtersToParams(state.filters);
     
-    if (!this.hasSearchableFilters(filters)) {
-      return;
+    // Add selectedManufacturer to URL params
+    if (state.selectedManufacturer) {
+      params['mfr'] = state.selectedManufacturer;
     }
     
+    this.routeState.setParams(params, false);
+  }
+
+  private resetResults(): void {
+    this.updateState({
+      results: [],
+      statistics: null,
+      hasSearched: false,
+      totalResults: 0
+    });
+  }
+
+  // ========== PUBLIC METHODS ==========
+
+  updateFilters(filters: SearchFilters): void {
+    const currentFilters = this.stateSubject.value.filters;
+    const newFilters = {
+      ...currentFilters,
+      ...filters,
+      page: 1  // Reset to page 1 on filter change
+    };
+
+    this.updateState({ filters: newFilters });
+    this.syncStateToUrl();
+
+    if (this.hasSearchableFilters(newFilters)) {
+      this.performSearch();
+    } else {
+      this.resetResults();
+    }
+  }
+
+  performSearch(): void {
+    const filters = this.stateSubject.value.filters;
+
+    if (!this.hasSearchableFilters(filters)) {
+      this.resetResults();
+      return;
+    }
+
     this.updateState({ loading: true, error: null });
-    
-    this.api.searchAircraft(filters).pipe(
-      takeUntil(this.destroy$)
-    ).subscribe({
-      next: (response: SearchResponse) => {
+
+    this.api.searchAircraft(filters).subscribe({
+      next: (response) => {
         this.updateState({
           results: response.items,
           statistics: response.statistics,
@@ -171,43 +187,40 @@ export class StateManagementService implements OnDestroy {
         });
       },
       error: (error) => {
-        console.error('Search failed:', error);
         this.updateState({
           loading: false,
-          error: 'Search failed. Please try again.',
+          error: 'Failed to load search results. Please try again.',
+          results: [],
+          statistics: null,
           hasSearched: true
         });
+        console.error('Search error:', error);
       }
     });
   }
-  
-  /**
-   * Change page within current search
-   * Called by pagination component
-   */
+
   updatePage(page: number): void {
     const currentFilters = this.stateSubject.value.filters;
-    const updatedFilters = { ...currentFilters, page };
-    
-    this.updateState({ filters: updatedFilters });
+    const newFilters = { ...currentFilters, page };
+
+    this.updateState({ filters: newFilters });
     this.syncStateToUrl();
     this.performSearch();
   }
-  
-  /**
-   * Select manufacturer for Histogram 2 detail view
-   * Called when clicking a bar in Histogram 1
-   */
+
   selectManufacturer(manufacturer: string | null): void {
     this.updateState({ selectedManufacturer: manufacturer });
+    this.syncStateToUrl();
   }
-  
-  /**
-   * Reset search to initial state
-   */
+
   resetSearch(): void {
+    const initialFilters: SearchFilters = {
+      page: 1,
+      size: 20
+    };
+
     this.updateState({
-      filters: {},
+      filters: initialFilters,
       results: [],
       statistics: null,
       hasSearched: false,
@@ -215,29 +228,8 @@ export class StateManagementService implements OnDestroy {
       error: null,
       selectedManufacturer: null
     });
-    this.routeState.clearAllParams();
-  }
 
-  // ========== PRIVATE HELPERS ==========
-  
-  private updateState(updates: Partial<SearchState>): void {
-    const current = this.stateSubject.value;
-    this.stateSubject.next({ ...current, ...updates });
-  }
-  
-  private syncStateToUrl(): void {
-    const filters = this.stateSubject.value.filters;
-    const params = this.routeState.filtersToParams(filters);
-    this.routeState.setParams(params, false);
-  }
-  
-  private resetResults(): void {
-    this.updateState({
-      results: [],
-      statistics: null,
-      hasSearched: false,
-      totalResults: 0
-    });
+    this.syncStateToUrl();
   }
 
   ngOnDestroy(): void {
