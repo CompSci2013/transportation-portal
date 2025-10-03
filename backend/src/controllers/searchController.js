@@ -156,3 +156,73 @@ exports.getAircraftById = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+/**
+ * Get unique manufacturer-state combinations with counts
+ * Supports pagination and search filtering
+ */
+exports.getManufacturerStateCombinations = async (req, res) => {
+  try {
+    const { page = 1, size = 20, search = '' } = req.query;
+    const from = (page - 1) * size;
+
+    // Aggregation query for unique manufacturer + state combinations
+    const response = await esClient.search({
+      index: INDEX_NAME,
+      size: 0,
+      body: {
+        query: search ? {
+          wildcard: {
+            manufacturer: {
+              value: `*${search}*`,
+              case_insensitive: true
+            }
+          }
+        } : { match_all: {} },
+        aggs: {
+          manufacturers: {
+            terms: {
+              field: 'manufacturer.keyword',
+              size: 1000
+            },
+            aggs: {
+              states: {
+                terms: {
+                  field: 'location.state_province.keyword',
+                  size: 100
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Flatten to manufacturer-state pairs
+    const pairs = [];
+    response.aggregations.manufacturers.buckets.forEach(mfrBucket => {
+      mfrBucket.states.buckets.forEach(stateBucket => {
+        pairs.push({
+          manufacturer: mfrBucket.key,
+          state: stateBucket.key,
+          count: stateBucket.doc_count
+        });
+      });
+    });
+
+    // Apply pagination
+    const total = pairs.length;
+    const paginatedPairs = pairs.slice(from, from + parseInt(size));
+
+    res.json({
+      total,
+      page: parseInt(page),
+      size: parseInt(size),
+      items: paginatedPairs
+    });
+
+  } catch (error) {
+    console.error('Error fetching manufacturer-state combinations:', error);
+    res.status(500).json({ error: 'Failed to fetch combinations' });
+  }
+};

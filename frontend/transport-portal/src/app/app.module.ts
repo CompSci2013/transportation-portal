@@ -11,6 +11,7 @@ import { StatisticsDashboardComponent } from './components/statistics-dashboard/
 import { HistogramComponent } from './components/histogram/histogram.component';
 import { PaginationComponent } from './components/pagination/pagination.component';
 import { ResultsTableComponent } from './components/results-table/results-table.component';
+import { ManufacturerStatePickerComponent } from './components/manufacturer-state-picker/manufacturer-state-picker.component';
 
 @NgModule({
   declarations: [
@@ -20,7 +21,8 @@ import { ResultsTableComponent } from './components/results-table/results-table.
     StatisticsDashboardComponent,
     HistogramComponent,
     PaginationComponent,
-    ResultsTableComponent
+    ResultsTableComponent,
+    ManufacturerStatePickerComponent
   ],
   imports: [
     BrowserModule,
