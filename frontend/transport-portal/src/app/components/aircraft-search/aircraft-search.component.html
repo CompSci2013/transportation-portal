@@ -5,11 +5,11 @@
   <div class="filter-panel">
     <h3>Filters</h3>
     
-    <!-- Manufacturer-State Picker -->
+    <!-- Manufacturer-State Table Picker -->
     <div style="margin-bottom: 1.5rem;">
-      <app-manufacturer-state-picker
+      <app-manufacturer-state-table-picker
         (selectionChange)="onManufacturerStateSelection($event)"
-      ></app-manufacturer-state-picker>
+      ></app-manufacturer-state-table-picker>
     </div>
     
     <div class="filter-grid">
@@ -127,6 +127,29 @@
       >
         Next
       </button>
+    </div>
+    
+    <!-- Histograms Section -->
+    <div class="histograms-section" *ngIf="state?.statistics">
+      <h3>Statistics</h3>
+      <div class="histograms-grid">
+        <app-histogram
+          [title]="'Aircraft by Manufacturer'"
+          [data]="manufacturerHistogramData"
+          [clickable]="true"
+          [selectedLabel]="selectedManufacturer"
+          [selectedLabel]="selectedManufacturer"
+          [maxHeight]="'400px'"
+          (barClick)="onManufacturerBarClick($event)"
+        ></app-histogram>
+        
+        <app-histogram
+          [title]="'Models by Manufacturer'"
+          [data]="modelsHistogramData"
+          [clickable]="false"
+          [maxHeight]="'400px'"
+        ></app-histogram>
+      </div>
     </div>
   </div>
   

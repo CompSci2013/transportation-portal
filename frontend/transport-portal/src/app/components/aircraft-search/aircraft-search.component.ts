@@ -4,6 +4,11 @@ import { StateManagementService } from '../../core/services/state-management.ser
 import { SearchState } from '../../models';
 import { Subscription } from 'rxjs';
 
+interface HistogramData {
+  label: string;
+  count: number;
+}
+
 @Component({
   selector: 'app-aircraft-search',
   templateUrl: './aircraft-search.component.html',
@@ -44,7 +49,6 @@ export class AircraftSearchComponent implements OnInit, OnDestroy {
   }
 
   onManufacturerStateSelection(selections: Array<{manufacturer: string, state: string}>): void {
-    // Take the first selection (or handle multiple later)
     if (selections.length > 0) {
       const first = selections[0];
       this.manufacturer = first.manufacturer;
@@ -74,6 +78,47 @@ export class AircraftSearchComponent implements OnInit, OnDestroy {
 
   onPageChange(page: number): void {
     this.stateService.updatePage(page);
+  }
+
+  onManufacturerBarClick(manufacturer: string): void {
+    // Only update the selected manufacturer for histogram filtering
+    // Does NOT change the search form or trigger a new search
+    this.stateService.selectManufacturer(manufacturer);
+  }
+
+  // Histogram data transformations
+  get manufacturerHistogramData(): HistogramData[] {
+    if (!this.state?.statistics?.byManufacturer) return [];
+    
+    return Object.entries(this.state.statistics.byManufacturer).map(([label, count]) => ({
+      label,
+      count
+    }));
+  }
+
+  get modelsHistogramData(): HistogramData[] {
+    if (!this.state?.statistics?.modelsByManufacturer) return [];
+    
+    const selectedMfr = this.state.selectedManufacturer;
+    const data: HistogramData[] = [];
+    
+    Object.entries(this.state.statistics.modelsByManufacturer).forEach(([manufacturer, models]) => {
+      // Filter to only show selected manufacturer's models if one is selected
+      if (selectedMfr && manufacturer !== selectedMfr) return;
+      
+      Object.entries(models).forEach(([model, count]) => {
+        data.push({
+          label: `${manufacturer} ${model}`,
+          count: count as number
+        });
+      });
+    });
+    
+    return data;
+  }
+
+  get selectedManufacturer(): string | null {
+    return this.state?.selectedManufacturer || null;
   }
 
   get loading(): boolean {

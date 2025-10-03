@@ -1,0 +1,160 @@
+<div class="picker-container">
+  <div class="picker-header">
+    <h4>Manufacturer + State</h4>
+    
+    <!-- Search Box -->
+    <div class="search-box">
+      <input 
+        type="text" 
+        [(ngModel)]="searchTerm"
+        (ngModelChange)="onSearchChange()"
+        placeholder="Search manufacturer and state..."
+        class="search-input"
+      />
+    </div>
+    
+    <!-- Visible Rows Dropdown -->
+    <div class="page-size-control">
+      <label for="pageSize">Show:</label>
+      <select 
+        id="pageSize"
+        [(ngModel)]="pageSize"
+        (ngModelChange)="onPageSizeChange()"
+        class="page-size-select"
+      >
+        <option *ngFor="let option of visibleRowOptions" [value]="option">
+          {{ option }} rows
+        </option>
+      </select>
+      <span class="total-info">of {{ rows.length }} combinations</span>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <p>Loading combinations...</p>
+  </div>
+
+  <!-- Table -->
+  <div *ngIf="!loading" class="table-wrapper">
+    <table class="picker-table">
+      <thead>
+        <tr>
+          <th>Manufacturer</th>
+          <th>State</th>
+          <th>Count</th>
+        </tr>
+      </thead>
+    </table>
+    
+    <div class="table-body-scroll" [style.max-height.px]="pageSize * 40">
+      <table class="picker-table">
+        <tbody>
+          <tr *ngFor="let row of visibleRows" [class.selected]="isRowSelected(row)">
+            <td class="manufacturer-cell">
+              <label class="checkbox-label">
+                <input 
+                  type="checkbox"
+                  [checked]="isRowSelected(row)"
+                  (change)="onManufacturerCheckboxClick(row)"
+                  class="manufacturer-checkbox"
+                />
+                {{ row.manufacturer }}
+              </label>
+            </td>
+            <td class="state-cell">
+              <label class="checkbox-label">
+                <input 
+                  type="checkbox"
+                  [checked]="isRowSelected(row)"
+                  (change)="onStateCheckboxClick(row)"
+                  class="state-checkbox"
+                />
+                {{ row.state }}
+              </label>
+            </td>
+            <td class="count-cell">
+              {{ row.count }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- Pagination Controls -->
+    <div class="pagination-controls" *ngIf="totalPages > 1">
+      <button 
+        type="button"
+        class="btn-page"
+        (click)="previousPage()"
+        [disabled]="!hasPreviousPage"
+      >
+        ‹ Prev
+      </button>
+      
+      <div class="page-numbers">
+        <button 
+          *ngFor="let page of pageNumbers"
+          type="button"
+          class="btn-page-num"
+          [class.active]="page === currentPage"
+          [disabled]="page === -1"
+          (click)="goToPage(page)"
+        >
+          <span *ngIf="page > 0">{{ page }}</span>
+          <span *ngIf="page === -1">...</span>
+        </button>
+      </div>
+      
+      <button 
+        type="button"
+        class="btn-page"
+        (click)="nextPage()"
+        [disabled]="!hasNextPage"
+      >
+        Next ›
+      </button>
+    </div>
+  </div>
+
+  <!-- Selected Items (Chips) -->
+  <div class="chips-section">
+    <div class="chips-label">Selected ({{ selectedChips.length }}):</div>
+    <div class="chips-container">
+      <div *ngIf="selectedChips.length === 0" class="no-selections">
+        No selections
+      </div>
+      <div *ngFor="let chip of selectedChips" class="chip">
+        <span class="chip-text">{{ chip.manufacturer }} - {{ chip.state }}</span>
+        <button 
+          type="button"
+          class="chip-remove"
+          (click)="removeChip(chip)"
+          [attr.aria-label]="'Remove ' + chip.manufacturer + ' - ' + chip.state"
+        >
+          ×
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="actions-section">
+    <button 
+      type="button"
+      class="btn btn-primary"
+      (click)="onApply()"
+      [disabled]="selectedChips.length === 0"
+    >
+      Apply ({{ selectedChips.length }})
+    </button>
+    <button 
+      type="button"
+      class="btn btn-secondary"
+      (click)="onClear()"
+      [disabled]="selectedChips.length === 0"
+    >
+      Clear
+    </button>
+  </div>
+</div>

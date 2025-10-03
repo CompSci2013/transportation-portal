@@ -1,0 +1,85 @@
+.
+├── backend
+│   ├── Dockerfile
+│   ├── Dockerfile.prod
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── src
+│   │   ├── config
+│   │   ├── controllers
+│   │   ├── index.js
+│   │   ├── middleware
+│   │   ├── models
+│   │   ├── routes
+│   │   ├── services
+│   │   └── utils
+│   └── tests
+├── docs
+│   ├── archive
+│   │   ├── complete-directory-tree.md
+│   │   ├── design1.md
+│   │   ├── implementation-notes.md
+│   │   ├── migration
+│   │   ├── prompt2.md
+│   │   ├── prompt3.md
+│   │   ├── prompt.md
+│   │   ├── session-summary-2.md
+│   │   ├── session-summary-3.md
+│   │   └── session-summary.md
+│   ├── conceptual-architecture.md
+│   ├── design
+│   │   └── architectural-design-v2.md
+│   ├── design-checklist.md
+│   ├── dev-container.txt
+│   ├── development-philosophy.md
+│   ├── dev-guide.txt
+│   ├── frontend-planning
+│   │   └── angular-state-management-reference.ts
+│   └── reqs
+│       ├── CR-2025-01.md
+│       └── REQ-2025-002-manufacturer-state-picker.md
+├── etl
+│   ├── config
+│   ├── create_indices.py
+│   ├── data
+│   │   └── faa
+│   ├── debug_faa_data.py
+│   ├── Dockerfile
+│   ├── extractors
+│   │   └── faa_extractor.py
+│   ├── loaders
+│   │   └── elasticsearch_loader.py
+│   ├── models
+│   │   ├── automobiles.py
+│   │   ├── common.py
+│   │   ├── __init__.py
+│   │   └── planes.py
+│   ├── requirements.txt
+│   ├── run_etl.py
+│   ├── SESSION_SUMMARY.txt
+│   ├── test_models.py
+│   ├── transformers
+│   │   └── faa_transformer.py
+│   ├── utils
+│   └── validators
+├── frontend
+│   ├── Dockerfile.dev
+│   └── transport-portal
+│       ├── angular.json
+│       ├── karma.conf.js
+│       ├── package.json
+│       ├── package-lock.json
+│       ├── README.md
+│       ├── src
+│       ├── tsconfig.app.json
+│       ├── tsconfig.json
+│       └── tsconfig.spec.json
+├── k8s
+│   ├── deployment.yaml
+│   ├── ingressroute.yaml
+│   ├── ingressroute.yaml.old
+│   ├── namespace.yaml
+│   └── service.yaml
+└── project-structure-clean.txt
+
+31 directories, 52 files

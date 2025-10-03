@@ -1,76 +1,47 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
+# Build artifacts
+*.tar
+*.tar.gz
 dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-venv/
-ENV/
-env/
+build/
 
 # Node.js
 node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+npm-debug.log
+yarn-error.log
 package-lock.json
-.npm
-.eslintcache
 
-# Angular
-.angular/
-/dist/
-/tmp/
-/out-tsc/
-/bazel-out/
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
 
-# IDEs
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+
+# OS
 .DS_Store
-
-# Environment files
-.env
-.env.local
-.env.*.local
-
-# Container images
-*.tar
-
-# Data files (large datasets)
-etl/data/faa/*.zip
-etl/data/faa/extracted/*.txt
-etl/data/nhtsa/
-etl/data/trainline/
+Thumbs.db
 
 # Logs
 *.log
-logs/
 
-# Test coverage
-.coverage
-htmlcov/
-.pytest_cache/
+# Temporary files
+*.tmp
+*.backup
+*.bak
 
-# Build artifacts
-*.o
-*.a
-*.class
+# ETL data files
+etl/data/**/*.zip
+etl/data/**/*.txt
+etl/data/**/extracted/
+
+# Environment files
+**/.env
+**/.env.local
+**/.env.*.local

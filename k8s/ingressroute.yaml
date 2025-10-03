@@ -1,14 +1,20 @@
-apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
+apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
   name: transport-api
   namespace: transportation
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
 spec:
-  entryPoints:
-    - web
-  routes:
-  - match: Host(`transportation.minilab`)
-    kind: Rule
-    services:
-    - name: transport-api
-      port: 3000
+  ingressClassName: traefik
+  rules:
+  - host: transportation.minilab
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: transport-api
+            port:
+              number: 3000

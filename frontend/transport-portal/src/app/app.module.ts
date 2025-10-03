@@ -10,6 +10,8 @@ import { AircraftDetailComponent } from './components/aircraft-detail/aircraft-d
 import { StatisticsDashboardComponent } from './components/statistics-dashboard/statistics-dashboard.component';
 import { FilterPickerComponent } from './shared/filter-picker/filter-picker.component';
 import { ManufacturerStatePickerComponent } from './components/manufacturer-state-picker/manufacturer-state-picker.component';
+import { ManufacturerStateTablePickerComponent } from './shared/manufacturer-state-table-picker/manufacturer-state-table-picker.component';
+import { HistogramComponent } from './components/histogram/histogram.component';
 
 @NgModule({
   declarations: [
@@ -18,7 +20,9 @@ import { ManufacturerStatePickerComponent } from './components/manufacturer-stat
     AircraftDetailComponent,
     StatisticsDashboardComponent,
     FilterPickerComponent,
-    ManufacturerStatePickerComponent
+    ManufacturerStatePickerComponent,
+    ManufacturerStateTablePickerComponent,
+    HistogramComponent,
   ],
   imports: [
     BrowserModule,

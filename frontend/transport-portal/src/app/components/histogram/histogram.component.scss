@@ -2,131 +2,108 @@
   background: white;
   border: 1px solid #ddd;
   border-radius: 4px;
-  padding: 16px;
-  margin: 16px 0;
+  padding: 1rem;
 }
 
 .histogram-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
-  padding-bottom: 8px;
-  border-bottom: 2px solid #0066cc;
-
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #eee;
+  
   h3 {
     margin: 0;
-    font-size: 18px;
-    color: #333;
+    font-size: 1.1rem;
+    font-weight: 600;
   }
-
+  
   .total-count {
-    font-size: 14px;
+    font-size: 0.85rem;
     color: #666;
-    font-weight: 500;
   }
 }
 
 .no-data {
+  padding: 2rem;
   text-align: center;
-  padding: 32px;
   color: #999;
   font-style: italic;
 }
 
 .histogram-bars-wrapper {
   overflow-y: auto;
-  overflow-x: hidden;
-  border: 1px solid #eee;
+  border: 1px solid #ddd;
   border-radius: 4px;
-  
-  // Scrollbar styling
-  &::-webkit-scrollbar {
-    width: 8px;
-  }
-  
-  &::-webkit-scrollbar-track {
-    background: #f5f5f5;
-    border-radius: 4px;
-  }
-  
-  &::-webkit-scrollbar-thumb {
-    background: #ccc;
-    border-radius: 4px;
-    
-    &:hover {
-      background: #999;
-    }
-  }
 }
 
 .histogram-bars {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 8px;
+  padding: 0.5rem;
 }
 
 .bar-row {
   display: grid;
   grid-template-columns: 150px 1fr 60px;
-  gap: 12px;
+  gap: 0.5rem;
   align-items: center;
-  padding: 6px 8px;
+  padding: 0.5rem;
   border-radius: 4px;
   transition: background-color 0.2s;
-
+  
   &.clickable {
     cursor: pointer;
-
-    &:hover {
-      background-color: #f5f5f5;
-    }
   }
-
+  
+  &.clickable:hover {
+    background-color: #e8f4f8;
+  }
+  
   &.selected {
-    background-color: #e6f2ff;
-    border-left: 3px solid #0066cc;
-    padding-left: 5px;
+    background-color: #d4edda;
   }
 }
 
 .bar-label {
-  font-size: 13px;
-  color: #333;
-  white-space: nowrap;
+  font-size: 0.9rem;
+  font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-weight: 500;
+  white-space: nowrap;
 }
 
 .bar-container {
-  background: #e0e0e0;
-  height: 24px;
-  border-radius: 3px;
-  overflow: hidden;
   position: relative;
+  height: 24px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
 }
 
 .bar {
   height: 100%;
-  background: linear-gradient(90deg, #4a90e2 0%, #0066cc 100%);
-  border-radius: 3px;
+  background: linear-gradient(90deg, #4a90e2 0%, #5ba3f5 100%);
+  border-radius: 4px;
   transition: all 0.3s ease;
-  min-width: 2%;
-
-  &.selected {
-    background: linear-gradient(90deg, #2ecc71 0%, #27ae60 100%);
+  
+  .bar-row.clickable:hover & {
+    background: linear-gradient(90deg, #357abd 0%, #4a90e2 100%);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
   }
-
-  .bar-row:hover & {
-    filter: brightness(1.1);
+  
+  &.selected {
+    background: linear-gradient(90deg, #28a745 0%, #34ce57 100%);
+  }
+  
+  .bar-row.clickable:hover &.selected {
+    background: linear-gradient(90deg, #218838 0%, #28a745 100%);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
   }
 }
 
 .bar-count {
   text-align: right;
-  font-size: 13px;
+  font-size: 0.9rem;
   font-weight: 600;
   color: #333;
 }
