@@ -8,13 +8,19 @@ import { AppComponent } from './app.component';
 import { AircraftSearchComponent } from './components/aircraft-search/aircraft-search.component';
 import { AircraftDetailComponent } from './components/aircraft-detail/aircraft-detail.component';
 import { StatisticsDashboardComponent } from './components/statistics-dashboard/statistics-dashboard.component';
+import { HistogramComponent } from './components/histogram/histogram.component';
+import { PaginationComponent } from './components/pagination/pagination.component';
+import { ResultsTableComponent } from './components/results-table/results-table.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     AircraftSearchComponent,
     AircraftDetailComponent,
-    StatisticsDashboardComponent
+    StatisticsDashboardComponent,
+    HistogramComponent,
+    PaginationComponent,
+    ResultsTableComponent
   ],
   imports: [
     BrowserModule,

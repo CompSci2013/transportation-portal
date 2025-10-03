@@ -1,0 +1,60 @@
+<div class="pagination-container" *ngIf="totalResults > 0">
+  <div class="pagination-info">
+    <span class="results-range">{{ displayedRange }}</span>
+  </div>
+
+  <div class="pagination-controls">
+    <!-- First Page -->
+    <button 
+      class="btn btn-page"
+      (click)="firstPage()"
+      [disabled]="!hasPreviousPage"
+      title="First page"
+    >
+      «
+    </button>
+
+    <!-- Previous Page -->
+    <button 
+      class="btn btn-page"
+      (click)="previousPage()"
+      [disabled]="!hasPreviousPage"
+      title="Previous page"
+    >
+      ‹
+    </button>
+
+    <!-- Page Numbers -->
+    <ng-container *ngFor="let page of pageNumbers">
+      <button 
+        *ngIf="page > 0"
+        class="btn btn-page"
+        [class.active]="page === currentPage"
+        (click)="goToPage(page)"
+      >
+        {{ page }}
+      </button>
+      <span *ngIf="page === -1" class="ellipsis">...</span>
+    </ng-container>
+
+    <!-- Next Page -->
+    <button 
+      class="btn btn-page"
+      (click)="nextPage()"
+      [disabled]="!hasNextPage"
+      title="Next page"
+    >
+      ›
+    </button>
+
+    <!-- Last Page -->
+    <button 
+      class="btn btn-page"
+      (click)="lastPage()"
+      [disabled]="!hasNextPage"
+      title="Last page"
+    >
+      »
+    </button>
+  </div>
+</div>

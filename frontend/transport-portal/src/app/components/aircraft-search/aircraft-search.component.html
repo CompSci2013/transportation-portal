@@ -68,71 +68,60 @@
     </div>
   </div>
   
-  <!-- Loading State -->
-  <div *ngIf="loading" class="loading">
-    <p>Loading aircraft data...</p>
-  </div>
-  
   <!-- Error State -->
   <div *ngIf="error" class="error">
     <p>{{ error }}</p>
   </div>
   
-  <!-- Results -->
-  <div *ngIf="!loading && !error" class="results-container">
-    <div class="results-header">
-      <h3>Results</h3>
-      <p class="results-count">{{ displayedRange }}</p>
-    </div>
-    
-    <div *ngIf="aircraft.length === 0" class="no-results">
-      <p>No aircraft found matching your criteria. Try adjusting your filters.</p>
-    </div>
-    
-    <table *ngIf="aircraft.length > 0" class="results-table">
-      <thead>
-        <tr>
-          <th>Registration</th>
-          <th>Manufacturer</th>
-          <th>Model</th>
-          <th>Year</th>
-          <th>Type</th>
-          <th>State</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let a of aircraft">
-          <td>{{ a.registration_id || 'N/A' }}</td>
-          <td>{{ a.manufacturer || 'Unknown' }}</td>
-          <td>{{ a.model || 'Unknown' }}</td>
-          <td>{{ a.year || 'N/A' }}</td>
-          <td>{{ a.category || 'N/A' }}</td>
-          <td>{{ a.location?.state_province || 'N/A' }}</td>
-          <td>
-            <a [routerLink]="['/aircraft', a.transport_id]" class="btn-link">View Details</a>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+  <!-- Results Section -->
+  <div *ngIf="hasSearched && !error" class="results-section">
+    <!-- Results Table -->
+    <app-results-table
+      [aircraft]="aircraft"
+      [loading]="loading"
+      (viewDetails)="onViewDetails($event)"
+    ></app-results-table>
     
     <!-- Pagination -->
-    <div *ngIf="aircraft.length > 0" class="pagination">
-      <button 
-        class="btn btn-secondary" 
-        (click)="previousPage()" 
-        [disabled]="!hasPreviousPage"
-      >
-        Previous
-      </button>
-      <span class="page-info">Page {{ currentPage }}</span>
-      <button 
-        class="btn btn-secondary" 
-        (click)="nextPage()" 
-        [disabled]="!hasNextPage"
-      >
-        Next
-      </button>
+    <app-pagination
+      *ngIf="!loading && aircraft.length > 0"
+      [currentPage]="currentPage"
+      [pageSize]="pageSize"
+      [totalResults]="totalRecords"
+      (pageChange)="onPageChange($event)"
+    ></app-pagination>
+    
+    <!-- Histograms Section -->
+    <div *ngIf="!loading && aircraft.length > 0" class="histograms-section">
+      <div class="histogram-grid">
+        <!-- Histogram 1: By Manufacturer -->
+        <app-histogram
+          title="By Manufacturer"
+          [data]="manufacturerHistogramData"
+          [clickable]="true"
+          [selectedLabel]="selectedManufacturer"
+          (barClick)="onManufacturerClick($event)"
+        ></app-histogram>
+        
+        <!-- Histogram 2: Models (filtered by selected manufacturer) -->
+        <app-histogram
+          *ngIf="selectedManufacturer"
+          [title]="'Models by ' + selectedManufacturer"
+          [data]="modelHistogramData"
+          [clickable]="false"
+        ></app-histogram>
+      </div>
+      
+      <div *ngIf="selectedManufacturer" class="clear-selection">
+        <button class="btn btn-secondary" (click)="onManufacturerClick(null)">
+          Clear Manufacturer Selection
+        </button>
+      </div>
     </div>
+  </div>
+  
+  <!-- No Search Performed Message -->
+  <div *ngIf="!hasSearched && !loading" class="no-search">
+    <p>Enter search criteria and click Search to view results.</p>
   </div>
 </div>

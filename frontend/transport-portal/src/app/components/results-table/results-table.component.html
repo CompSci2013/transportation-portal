@@ -1,0 +1,42 @@
+<div class="results-table-container">
+  <div *ngIf="loading" class="loading-overlay">
+    <p>Loading results...</p>
+  </div>
+
+  <div *ngIf="!hasResults && !loading" class="no-results">
+    <p>No aircraft found matching your criteria.</p>
+    <p class="suggestion">Try adjusting your filters or reset to see all results.</p>
+  </div>
+
+  <table *ngIf="hasResults" class="results-table">
+    <thead>
+      <tr>
+        <th>Registration</th>
+        <th>Manufacturer</th>
+        <th>Model</th>
+        <th>Year</th>
+        <th>Type</th>
+        <th>State</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let aircraft of aircraft">
+        <td class="registration">{{ aircraft.registration_id || 'N/A' }}</td>
+        <td>{{ aircraft.manufacturer || 'Unknown' }}</td>
+        <td>{{ aircraft.model || 'Unknown' }}</td>
+        <td class="year">{{ aircraft.year || 'N/A' }}</td>
+        <td class="type">{{ aircraft.category || 'N/A' }}</td>
+        <td>{{ aircraft.location?.state_province || 'N/A' }}</td>
+        <td class="actions">
+          <button 
+            class="btn-link" 
+            (click)="onViewDetails(aircraft.transport_id)"
+          >
+            View Details
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

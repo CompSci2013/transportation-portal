@@ -1,0 +1,39 @@
+<div class="histogram-container">
+  <div class="histogram-header">
+    <h3>{{ title }}</h3>
+    <span class="total-count" *ngIf="hasData">
+      {{ displayData.length }} items ({{ totalCount }} total)
+    </span>
+  </div>
+
+  <div *ngIf="!hasData" class="no-data">
+    <p>No data available</p>
+  </div>
+
+  <div *ngIf="hasData" class="histogram-bars-wrapper" [style.max-height]="maxHeight">
+    <div class="histogram-bars">
+      <div 
+        *ngFor="let item of displayData"
+        class="bar-row"
+        [class.clickable]="clickable"
+        [class.selected]="isSelected(item.label)"
+        (click)="onBarClick(item.label)"
+      >
+        <div class="bar-label" [title]="item.label">
+          {{ item.label }}
+        </div>
+        <div class="bar-container">
+          <div 
+            class="bar" 
+            [style.width]="getBarWidth(item.count)"
+            [class.selected]="isSelected(item.label)"
+          >
+          </div>
+        </div>
+        <div class="bar-count">
+          {{ item.count }}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

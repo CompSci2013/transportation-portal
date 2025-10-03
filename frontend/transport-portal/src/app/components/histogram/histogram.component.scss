@@ -1,0 +1,132 @@
+.histogram-container {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 16px;
+  margin: 16px 0;
+}
+
+.histogram-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #0066cc;
+
+  h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+  }
+
+  .total-count {
+    font-size: 14px;
+    color: #666;
+    font-weight: 500;
+  }
+}
+
+.no-data {
+  text-align: center;
+  padding: 32px;
+  color: #999;
+  font-style: italic;
+}
+
+.histogram-bars-wrapper {
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  
+  // Scrollbar styling
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: #f5f5f5;
+    border-radius: 4px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+    
+    &:hover {
+      background: #999;
+    }
+  }
+}
+
+.histogram-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 150px 1fr 60px;
+  gap: 12px;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+
+  &.clickable {
+    cursor: pointer;
+
+    &:hover {
+      background-color: #f5f5f5;
+    }
+  }
+
+  &.selected {
+    background-color: #e6f2ff;
+    border-left: 3px solid #0066cc;
+    padding-left: 5px;
+  }
+}
+
+.bar-label {
+  font-size: 13px;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+.bar-container {
+  background: #e0e0e0;
+  height: 24px;
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.bar {
+  height: 100%;
+  background: linear-gradient(90deg, #4a90e2 0%, #0066cc 100%);
+  border-radius: 3px;
+  transition: all 0.3s ease;
+  min-width: 2%;
+
+  &.selected {
+    background: linear-gradient(90deg, #2ecc71 0%, #27ae60 100%);
+  }
+
+  .bar-row:hover & {
+    filter: brightness(1.1);
+  }
+}
+
+.bar-count {
+  text-align: right;
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+}

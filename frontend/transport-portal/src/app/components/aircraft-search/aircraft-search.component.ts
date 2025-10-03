@@ -1,6 +1,8 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Router } from '@angular/router';
 import { StateManagementService } from '../../core/services/state-management.service';
-import { SearchState } from '../../models';
+import { SearchState, SearchStatistics } from '../../models';
+import { HistogramData } from '../histogram/histogram.component';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -20,7 +22,10 @@ export class AircraftSearchComponent implements OnInit, OnDestroy {
   yearMax: number | null = null;
   state_province = '';
 
-  constructor(private stateService: StateManagementService) { }
+  constructor(
+    private stateService: StateManagementService,
+    private router: Router
+  ) { }
 
   ngOnInit(): void {
     // Subscribe to state changes
@@ -65,20 +70,46 @@ export class AircraftSearchComponent implements OnInit, OnDestroy {
     this.stateService.resetSearch();
   }
 
-  nextPage(): void {
-    if (this.state && this.hasNextPage) {
-      const currentPage = this.state.filters.page || 1;
-      this.stateService.updatePage(currentPage + 1);
-    }
+  onPageChange(page: number): void {
+    this.stateService.updatePage(page);
   }
 
-  previousPage(): void {
-    if (this.state && this.hasPreviousPage) {
-      const currentPage = this.state.filters.page || 1;
-      this.stateService.updatePage(currentPage - 1);
-    }
+  onViewDetails(transportId: string): void {
+    this.router.navigate(['/aircraft', transportId]);
   }
 
+  onManufacturerClick(manufacturer: string | null): void {
+    // Select manufacturer for histogram 2
+    this.stateService.selectManufacturer(manufacturer);
+  }
+
+  // Histogram data getters
+  get manufacturerHistogramData(): HistogramData[] {
+    if (!this.state?.statistics) return [];
+    
+    return Object.entries(this.state.statistics.byManufacturer).map(([label, count]) => ({
+      label,
+      count
+    }));
+  }
+
+  get modelHistogramData(): HistogramData[] {
+    if (!this.state?.statistics || !this.state.selectedManufacturer) return [];
+    
+    const models = this.state.statistics.modelsByManufacturer[this.state.selectedManufacturer];
+    if (!models) return [];
+    
+    return Object.entries(models).map(([label, count]) => ({
+      label,
+      count
+    }));
+  }
+
+  get selectedManufacturer(): string | null {
+    return this.state?.selectedManufacturer || null;
+  }
+
+  // Convenience getters
   get loading(): boolean {
     return this.state?.loading || false;
   }
@@ -103,19 +134,7 @@ export class AircraftSearchComponent implements OnInit, OnDestroy {
     return this.state?.filters.size || 20;
   }
 
-  get hasNextPage(): boolean {
-    if (!this.state) return false;
-    return this.currentPage * this.pageSize < this.totalRecords;
-  }
-
-  get hasPreviousPage(): boolean {
-    return this.currentPage > 1;
-  }
-
-  get displayedRange(): string {
-    if (!this.state || this.totalRecords === 0) return '0-0 of 0';
-    const start = (this.currentPage - 1) * this.pageSize + 1;
-    const end = Math.min(this.currentPage * this.pageSize, this.totalRecords);
-    return `${start}-${end} of ${this.totalRecords}`;
+  get hasSearched(): boolean {
+    return this.state?.hasSearched || false;
   }
 }
