@@ -20,7 +20,8 @@ interface ManufacturerStateSelection {
   styleUrls: ['./manufacturer-state-table-picker.component.scss']
 })
 export class ManufacturerStateTablePickerComponent implements OnInit, OnDestroy, OnChanges {
-  @Input() clearTrigger: number = 0; // Increment this to trigger clear from parent
+  @Input() clearTrigger: number = 0;
+  @Input() initialSelections: ManufacturerStateSelection[] = []; // NEW: hydrate from parent
   @Output() selectionChange = new EventEmitter<ManufacturerStateSelection[]>();
 
   rows: PickerRow[] = [];
@@ -44,12 +45,29 @@ export class ManufacturerStateTablePickerComponent implements OnInit, OnDestroy,
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    // Handle clearTrigger
     if (changes['clearTrigger'] && !changes['clearTrigger'].firstChange) {
       const newValue = changes['clearTrigger'].currentValue;
       if (newValue !== this.lastClearTrigger) {
         this.lastClearTrigger = newValue;
         this.selectedRows.clear();
       }
+    }
+
+    // Handle initialSelections (for browser back/forward, deep links)
+    if (changes['initialSelections']) {
+      this.hydrateSelections();
+    }
+  }
+
+  private hydrateSelections(): void {
+    this.selectedRows.clear();
+    
+    if (this.initialSelections && this.initialSelections.length > 0) {
+      this.initialSelections.forEach(selection => {
+        const key = `${selection.manufacturer}|${selection.state}`;
+        this.selectedRows.add(key);
+      });
     }
   }
 
@@ -77,6 +95,9 @@ export class ManufacturerStateTablePickerComponent implements OnInit, OnDestroy,
         
         this.applyFilter();
         this.loading = false;
+        
+        // After data loads, hydrate selections from initialSelections
+        this.hydrateSelections();
       },
       error: (error) => {
         console.error('Failed to load combinations:', error);
@@ -215,7 +236,7 @@ export class ManufacturerStateTablePickerComponent implements OnInit, OnDestroy,
 
   onClear(): void {
     this.selectedRows.clear();
-    this.onApply(); // Trigger the apply to notify parent
+    this.onApply();
   }
 
   private loadPageSizePreference(): void {

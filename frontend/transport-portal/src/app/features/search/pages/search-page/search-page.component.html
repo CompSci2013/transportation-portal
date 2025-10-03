@@ -11,6 +11,7 @@
     <div class="picker-container">
       <app-manufacturer-state-table-picker
         [clearTrigger]="pickerClearTrigger"
+        [initialSelections]="currentFilters.manufacturerStateCombos || []"
         (selectionChange)="onManufacturerStateSelection($event)"
       ></app-manufacturer-state-table-picker>
     </div>
