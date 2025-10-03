@@ -1,12 +1,12 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { AircraftSearchComponent } from './components/aircraft-search/aircraft-search.component';
+import { SearchPageComponent } from './pages/search-page/search-page.component';
 import { AircraftDetailComponent } from './components/aircraft-detail/aircraft-detail.component';
 import { StatisticsDashboardComponent } from './components/statistics-dashboard/statistics-dashboard.component';
 
 const routes: Routes = [
   { path: '', redirectTo: '/search', pathMatch: 'full' },
-  { path: 'search', component: AircraftSearchComponent },
+  { path: 'search', component: SearchPageComponent },
   { path: 'aircraft/:id', component: AircraftDetailComponent },
   { path: 'statistics', component: StatisticsDashboardComponent },
   { path: '**', redirectTo: '/search' }

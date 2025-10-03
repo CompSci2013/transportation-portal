@@ -1,0 +1,91 @@
+<div class="search-page">
+  <div class="page-header">
+    <h1>Search Aircraft Registry</h1>
+  </div>
+
+  <!-- Filters Section -->
+  <section class="filters-section">
+    <h2>Filters</h2>
+    
+    <!-- Manufacturer-State Picker -->
+    <div class="picker-container">
+      <app-manufacturer-state-table-picker
+        (selectionChange)="onManufacturerStateSelection($event)"
+      ></app-manufacturer-state-table-picker>
+    </div>
+    
+    <!-- Search Form -->
+    <app-search-form
+      [initialFilters]="currentFilters"
+      [loading]="loading"
+      (search)="onSearch($event)"
+      (reset)="onReset()"
+    ></app-search-form>
+  </section>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <p>Loading aircraft data...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="error-state">
+    <p>{{ error }}</p>
+  </div>
+
+  <!-- Results Section -->
+  <section *ngIf="!loading && !error && hasSearched" class="results-section">
+    <div class="results-header">
+      <h2>Results</h2>
+      <p class="results-count">{{ totalRecords }} aircraft found</p>
+    </div>
+
+    <!-- Results Table -->
+    <app-results-table
+      [vehicles]="vehicles"
+      [loading]="loading"
+      (viewDetails)="onViewDetails($event)"
+    ></app-results-table>
+
+    <!-- Pagination -->
+    <app-pagination
+      [currentPage]="currentPage"
+      [pageSize]="pageSize"
+      [totalResults]="totalRecords"
+      (pageChange)="onPageChange($event)"
+    ></app-pagination>
+
+    <!-- Statistics/Histograms -->
+    <div *ngIf="state?.statistics" class="statistics-section">
+      <h2>Statistics</h2>
+      <div class="histograms-grid">
+        <app-histogram
+          [title]="'Aircraft by Manufacturer'"
+          [data]="manufacturerHistogramData"
+          [clickable]="true"
+          [selectedLabel]="selectedManufacturer"
+          [maxHeight]="'400px'"
+          (barClick)="onManufacturerBarClick($event)"
+        ></app-histogram>
+        
+        <app-histogram
+          [title]="'Models by Manufacturer'"
+          [data]="modelsHistogramData"
+          [clickable]="false"
+          [maxHeight]="'400px'"
+        ></app-histogram>
+      </div>
+    </div>
+  </section>
+
+  <!-- No Results State -->
+  <div *ngIf="!loading && !error && hasSearched && vehicles.length === 0" class="no-results">
+    <p>No aircraft found matching your criteria.</p>
+    <p class="suggestion">Try adjusting your filters or clearing them to see more results.</p>
+  </div>
+
+  <!-- Welcome State (No Search Yet) -->
+  <div *ngIf="!hasSearched && !loading" class="welcome-state">
+    <p>Enter search criteria above to find aircraft in the registry.</p>
+  </div>
+</div>

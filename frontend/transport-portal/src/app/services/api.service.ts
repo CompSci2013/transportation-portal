@@ -1,20 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Aircraft } from '../models/aircraft.model';
-import { SearchFilters, SearchResponse } from '../models';
 import { environment } from '../../environments/environment';
-
-interface ManufacturerStateCombinationsResponse {
-  total: number;
-  page: number;
-  size: number;
-  items: Array<{
-    manufacturer: string;
-    state: string;
-    count: number;
-  }>;
-}
+import { SearchFilters, SearchResponse, Aircraft } from '../models';
 
 @Injectable({
   providedIn: 'root'
@@ -26,19 +14,32 @@ export class ApiService {
 
   /**
    * Search aircraft with filters
-   * Returns enhanced response with statistics
+   * Maps camelCase frontend properties to snake_case backend parameters
    */
   searchAircraft(filters: SearchFilters): Observable<SearchResponse> {
     let params = new HttpParams();
     
-    // Convert SearchFilters to HTTP params
+    // Parameter mapping: frontend (camelCase) -> backend (snake_case)
+    const paramMap: { [key: string]: string } = {
+      'q': 'query',
+      'manufacturer': 'manufacturer',
+      'model': 'model',
+      'yearMin': 'year_min',
+      'yearMax': 'year_max',
+      'state': 'state',
+      'page': 'page',
+      'size': 'size'
+    };
+    
     Object.keys(filters).forEach(key => {
       const value = (filters as any)[key];
+      const backendParam = paramMap[key] || key;
+      
       if (value !== undefined && value !== null && value !== '') {
-        params = params.set(key, value.toString());
+        params = params.set(backendParam, value.toString());
       }
     });
-
+    
     return this.http.get<SearchResponse>(`${this.apiUrl}/aircraft`, { params });
   }
 
@@ -58,20 +59,13 @@ export class ApiService {
   }
 
   /**
-   * Get API info
-   */
-  getInfo(): Observable<any> {
-    return this.http.get(`${this.apiUrl}/info`);
-  }
-
-  /**
-   * Get manufacturer-state combinations with pagination and search
+   * Get manufacturer-state combinations for picker
    */
   getManufacturerStateCombinations(
-    page: number = 1, 
-    size: number = 50, 
+    page: number = 1,
+    size: number = 20,
     search: string = ''
-  ): Observable<ManufacturerStateCombinationsResponse> {
+  ): Observable<any> {
     let params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString());
@@ -79,10 +73,7 @@ export class ApiService {
     if (search) {
       params = params.set('search', search);
     }
-
-    return this.http.get<ManufacturerStateCombinationsResponse>(
-      `${this.apiUrl}/manufacturer-state-combinations`, 
-      { params }
-    );
+    
+    return this.http.get(`${this.apiUrl}/manufacturer-state-combinations`, { params });
   }
 }

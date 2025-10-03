@@ -50,7 +50,7 @@ export class ManufacturerStateTablePickerComponent implements OnInit, OnDestroy 
     
     this.subscription = this.apiService.getManufacturerStateCombinations(1, 10000, '').subscribe({
       next: (response) => {
-        this.allRows = response.items.map(item => ({
+        this.allRows = response.items.map((item: any) => ({
           manufacturer: item.manufacturer,
           state: item.state,
           count: item.count,

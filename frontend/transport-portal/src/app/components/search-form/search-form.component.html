@@ -1,0 +1,87 @@
+<form [formGroup]="searchForm" (ngSubmit)="onSubmit()" class="search-form">
+  <div class="form-grid">
+    <div class="form-field">
+      <label for="manufacturer">Manufacturer</label>
+      <input 
+        type="text" 
+        id="manufacturer" 
+        formControlName="manufacturer"
+        placeholder="e.g., Cessna, Boeing"
+        class="form-input"
+      />
+    </div>
+    
+    <div class="form-field">
+      <label for="state">State</label>
+      <input 
+        type="text" 
+        id="state" 
+        formControlName="state"
+        placeholder="e.g., CA, TX"
+        class="form-input"
+        [class.invalid]="searchForm.get('state')?.invalid && searchForm.get('state')?.touched"
+      />
+      <span class="error-message" *ngIf="stateErrors">{{ stateErrors }}</span>
+    </div>
+    
+    <div class="form-field">
+      <label for="model">Model</label>
+      <input 
+        type="text" 
+        id="model" 
+        formControlName="model"
+        placeholder="e.g., 172, 737"
+        class="form-input"
+      />
+    </div>
+    
+    <div class="form-field">
+      <label for="yearMin">Year From</label>
+      <input 
+        type="number" 
+        id="yearMin" 
+        formControlName="yearMin"
+        placeholder="1900"
+        class="form-input"
+        [class.invalid]="searchForm.get('yearMin')?.invalid && searchForm.get('yearMin')?.touched"
+      />
+      <span class="error-message" *ngIf="yearMinErrors">{{ yearMinErrors }}</span>
+    </div>
+    
+    <div class="form-field">
+      <label for="yearMax">Year To</label>
+      <input 
+        type="number" 
+        id="yearMax" 
+        formControlName="yearMax"
+        placeholder="2025"
+        class="form-input"
+        [class.invalid]="searchForm.get('yearMax')?.invalid && searchForm.get('yearMax')?.touched"
+      />
+      <span class="error-message" *ngIf="yearMaxErrors">{{ yearMaxErrors }}</span>
+    </div>
+  </div>
+  
+  <!-- Cross-field validation error -->
+  <div class="form-error" *ngIf="yearRangeError">
+    <span class="error-message">{{ yearRangeError }}</span>
+  </div>
+  
+  <div class="form-actions">
+    <button 
+      type="submit" 
+      class="btn btn-primary" 
+      [disabled]="loading || searchForm.invalid"
+    >
+      {{ loading ? 'Searching...' : 'Search' }}
+    </button>
+    <button 
+      type="button" 
+      class="btn btn-secondary" 
+      (click)="onReset()"
+      [disabled]="loading"
+    >
+      Reset
+    </button>
+  </div>
+</form>

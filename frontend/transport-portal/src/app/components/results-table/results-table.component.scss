@@ -1,5 +1,4 @@
 .results-table-container {
-  position: relative;
   background: white;
   border: 1px solid #ddd;
   border-radius: 4px;
@@ -7,78 +6,73 @@
 }
 
 .loading-overlay {
-  padding: 48px;
+  padding: 2rem;
   text-align: center;
   color: #666;
-  font-size: 16px;
 }
 
 .no-results {
-  padding: 48px;
+  padding: 3rem 2rem;
   text-align: center;
-
+  
   p {
-    margin: 8px 0;
+    margin: 0.5rem 0;
     color: #666;
-    font-size: 16px;
-
-    &.suggestion {
-      font-size: 14px;
-      color: #999;
-      font-style: italic;
-    }
+  }
+  
+  .suggestion {
+    font-size: 0.9rem;
+    color: #999;
   }
 }
 
 .results-table {
   width: 100%;
   border-collapse: collapse;
-
+  
   thead {
     background: #f5f5f5;
-    border-bottom: 2px solid #ddd;
-
+    
     th {
-      padding: 12px 16px;
+      padding: 1rem;
       text-align: left;
       font-weight: 600;
+      font-size: 0.9rem;
+      border-bottom: 2px solid #ddd;
       color: #333;
-      font-size: 14px;
-      white-space: nowrap;
     }
   }
-
+  
   tbody {
     tr {
       border-bottom: 1px solid #eee;
       transition: background-color 0.2s;
-
+      
       &:hover {
         background-color: #f9f9f9;
       }
-
-      &:last-child {
-        border-bottom: none;
-      }
     }
-
+    
     td {
-      padding: 12px 16px;
+      padding: 0.75rem 1rem;
+      font-size: 0.9rem;
       color: #333;
-      font-size: 14px;
-
+      
       &.registration {
         font-family: monospace;
-        font-weight: 600;
-        color: #0066cc;
+        font-weight: 500;
       }
-
-      &.year, &.type {
-        color: #666;
-      }
-
-      &.actions {
+      
+      &.year {
         text-align: center;
+      }
+      
+      &.type {
+        text-transform: capitalize;
+      }
+      
+      &.actions {
+        text-align: right;
       }
     }
   }
@@ -87,116 +81,12 @@
 .btn-link {
   background: none;
   border: none;
-  color: #0066cc;
+  color: #4a90e2;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 0.9rem;
   text-decoration: underline;
-  padding: 4px 8px;
-  transition: color 0.2s;
-
+  
   &:hover {
-    color: #004499;
-  }
-}
-EOFcd ~/projects/transportation/frontend/transport-portal/src/app/components/results-table
-cat > results-table.component.scss << 'EOF'
-.results-table-container {
-  position: relative;
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.loading-overlay {
-  padding: 48px;
-  text-align: center;
-  color: #666;
-  font-size: 16px;
-}
-
-.no-results {
-  padding: 48px;
-  text-align: center;
-
-  p {
-    margin: 8px 0;
-    color: #666;
-    font-size: 16px;
-
-    &.suggestion {
-      font-size: 14px;
-      color: #999;
-      font-style: italic;
-    }
-  }
-}
-
-.results-table {
-  width: 100%;
-  border-collapse: collapse;
-
-  thead {
-    background: #f5f5f5;
-    border-bottom: 2px solid #ddd;
-
-    th {
-      padding: 12px 16px;
-      text-align: left;
-      font-weight: 600;
-      color: #333;
-      font-size: 14px;
-      white-space: nowrap;
-    }
-  }
-
-  tbody {
-    tr {
-      border-bottom: 1px solid #eee;
-      transition: background-color 0.2s;
-
-      &:hover {
-        background-color: #f9f9f9;
-      }
-
-      &:last-child {
-        border-bottom: none;
-      }
-    }
-
-    td {
-      padding: 12px 16px;
-      color: #333;
-      font-size: 14px;
-
-      &.registration {
-        font-family: monospace;
-        font-weight: 600;
-        color: #0066cc;
-      }
-
-      &.year, &.type {
-        color: #666;
-      }
-
-      &.actions {
-        text-align: center;
-      }
-    }
-  }
-}
-
-.btn-link {
-  background: none;
-  border: none;
-  color: #0066cc;
-  cursor: pointer;
-  font-size: 14px;
-  text-decoration: underline;
-  padding: 4px 8px;
-  transition: color 0.2s;
-
-  &:hover {
-    color: #004499;
+    color: #357abd;
   }
 }

@@ -37,7 +37,7 @@ export class ManufacturerStatePickerComponent implements OnInit {
       this.searchTerm
     ).subscribe({
       next: (response) => {
-        this.options = response.items.map(item => ({
+        this.options = response.items.map((item: any) => ({
           value: `${item.manufacturer}|${item.state}`,
           label: `${item.manufacturer} - ${item.state}`,
           manufacturer: item.manufacturer,

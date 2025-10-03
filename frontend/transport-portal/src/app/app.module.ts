@@ -12,6 +12,10 @@ import { FilterPickerComponent } from './shared/filter-picker/filter-picker.comp
 import { ManufacturerStatePickerComponent } from './components/manufacturer-state-picker/manufacturer-state-picker.component';
 import { ManufacturerStateTablePickerComponent } from './shared/manufacturer-state-table-picker/manufacturer-state-table-picker.component';
 import { HistogramComponent } from './components/histogram/histogram.component';
+import { SearchFormComponent } from './components/search-form/search-form.component';
+import { SearchPageComponent } from './pages/search-page/search-page.component';
+import { PaginationComponent } from './components/pagination/pagination.component';
+import { ResultsTableComponent } from './components/results-table/results-table.component';
 
 @NgModule({
   declarations: [
@@ -23,6 +27,10 @@ import { HistogramComponent } from './components/histogram/histogram.component';
     ManufacturerStatePickerComponent,
     ManufacturerStateTablePickerComponent,
     HistogramComponent,
+    SearchFormComponent,
+    SearchPageComponent,
+    PaginationComponent,
+    ResultsTableComponent
   ],
   imports: [
     BrowserModule,

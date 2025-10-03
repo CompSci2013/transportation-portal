@@ -1,0 +1,115 @@
+.search-form {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 1.5rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  
+  label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #333;
+  }
+  
+  .form-input {
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    
+    &:focus {
+      outline: none;
+      border-color: #4a90e2;
+      box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.1);
+    }
+    
+    &::placeholder {
+      color: #999;
+    }
+  }
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.5rem;
+  
+  .btn {
+    padding: 0.5rem 1.5rem;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    &.btn-primary {
+      background: #4a90e2;
+      color: white;
+      
+      &:hover:not(:disabled) {
+        background: #357abd;
+      }
+    }
+    
+    &.btn-secondary {
+      background: #e0e0e0;
+      color: #333;
+      
+      &:hover:not(:disabled) {
+        background: #d0d0d0;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+// Validation states
+.form-input.invalid {
+  border-color: #dc3545;
+  
+  &:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.1);
+  }
+}
+
+.error-message {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  color: #dc3545;
+}
+
+.form-error {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: #fff5f5;
+  border: 1px solid #dc3545;
+  border-radius: 4px;
+  
+  .error-message {
+    margin: 0;
+    font-size: 0.9rem;
+  }
+}
