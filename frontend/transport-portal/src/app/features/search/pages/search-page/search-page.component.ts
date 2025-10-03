@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { StateManagementService } from '../../core/services/state-management.service';
-import { SearchState, SearchFilters } from '../../models';
+import { StateManagementService } from '../../../../core/services/state-management.service';
+import { SearchState, SearchFilters } from '../../../../models';
 import { Subscription } from 'rxjs';
 
 interface HistogramData {

@@ -2,35 +2,41 @@ import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { HttpClientModule } from '@angular/common/http';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { AircraftSearchComponent } from './components/aircraft-search/aircraft-search.component';
-import { AircraftDetailComponent } from './components/aircraft-detail/aircraft-detail.component';
-import { StatisticsDashboardComponent } from './components/statistics-dashboard/statistics-dashboard.component';
-import { FilterPickerComponent } from './shared/filter-picker/filter-picker.component';
-import { ManufacturerStatePickerComponent } from './components/manufacturer-state-picker/manufacturer-state-picker.component';
-import { ManufacturerStateTablePickerComponent } from './shared/manufacturer-state-table-picker/manufacturer-state-table-picker.component';
-import { HistogramComponent } from './components/histogram/histogram.component';
-import { SearchFormComponent } from './components/search-form/search-form.component';
-import { SearchPageComponent } from './pages/search-page/search-page.component';
-import { PaginationComponent } from './components/pagination/pagination.component';
-import { ResultsTableComponent } from './components/results-table/results-table.component';
+
+// Feature: Search - Pages
+import { SearchPageComponent } from './features/search/pages/search-page/search-page.component';
+import { AircraftDetailComponent } from './features/search/pages/aircraft-detail/aircraft-detail.component';
+import { StatisticsDashboardComponent } from './features/search/pages/statistics-dashboard/statistics-dashboard.component';
+
+// Feature: Search - Components
+import { SearchFormComponent } from './features/search/components/search-form/search-form.component';
+import { ResultsTableComponent } from './features/search/components/results-table/results-table.component';
+import { ManufacturerStatePickerComponent } from './features/search/components/manufacturer-state-picker/manufacturer-state-picker.component';
+import { ManufacturerStateTablePickerComponent } from './features/search/components/manufacturer-state-table-picker/manufacturer-state-table-picker.component';
+
+// Shared Components
+import { HistogramComponent } from './shared/components/histogram/histogram.component';
+import { PaginationComponent } from './shared/components/pagination/pagination.component';
+import { FilterPickerComponent } from './shared/components/filter-picker/filter-picker.component';
 
 @NgModule({
   declarations: [
     AppComponent,
-    AircraftSearchComponent,
+    // Search Pages
+    SearchPageComponent,
     AircraftDetailComponent,
     StatisticsDashboardComponent,
-    FilterPickerComponent,
+    // Search Components
+    SearchFormComponent,
+    ResultsTableComponent,
     ManufacturerStatePickerComponent,
     ManufacturerStateTablePickerComponent,
+    // Shared Components
     HistogramComponent,
-    SearchFormComponent,
-    SearchPageComponent,
     PaginationComponent,
-    ResultsTableComponent
+    FilterPickerComponent
   ],
   imports: [
     BrowserModule,

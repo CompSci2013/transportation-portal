@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { TransportVehicle } from '../../models';
+import { TransportVehicle } from '../../../../models';
 
 @Component({
   selector: 'app-results-table',

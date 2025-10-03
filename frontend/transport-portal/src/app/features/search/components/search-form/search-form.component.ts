@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
-import { SearchFilters } from '../../models';
+import { SearchFilters } from '../../../../models';
 
 @Component({
   selector: 'app-search-form',

@@ -1,6 +1,6 @@
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
-import { ApiService } from '../../services/api.service';
-import { FilterOption } from '../../shared/filter-picker/filter-picker.component';
+import { ApiService } from '../../../../services/api.service';
+import { FilterOption } from '../../../../shared/components/filter-picker/filter-picker.component';
 
 interface ManufacturerStateCombination {
   manufacturer: string;
