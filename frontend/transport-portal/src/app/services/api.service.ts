@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Aircraft, SearchResponse, Statistics } from '../models/aircraft.model';
+import { Aircraft } from '../models/aircraft.model';
+import { SearchFilters, SearchResponse } from '../models';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -14,25 +15,19 @@ export class ApiService {
 
   /**
    * Search aircraft with filters
+   * Returns enhanced response with statistics
    */
-  searchAircraft(filters: {
-    manufacturer?: string;
-    model?: string;
-    year_min?: number;
-    year_max?: number;
-    state?: string;
-    from?: number;
-    size?: number;
-  }): Observable<SearchResponse> {
+  searchAircraft(filters: SearchFilters): Observable<SearchResponse> {
     let params = new HttpParams();
     
+    // Convert SearchFilters to HTTP params
     Object.keys(filters).forEach(key => {
       const value = (filters as any)[key];
       if (value !== undefined && value !== null && value !== '') {
         params = params.set(key, value.toString());
       }
     });
-
+    
     return this.http.get<SearchResponse>(`${this.apiUrl}/aircraft`, { params });
   }
 
@@ -44,10 +39,11 @@ export class ApiService {
   }
 
   /**
-   * Get aggregate statistics
+   * Get aggregate statistics (for dashboard page)
+   * Note: Search endpoint now includes filtered statistics
    */
-  getStatistics(): Observable<Statistics> {
-    return this.http.get<Statistics>(`${this.apiUrl}/statistics`);
+  getStatistics(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/statistics`);
   }
 
   /**
