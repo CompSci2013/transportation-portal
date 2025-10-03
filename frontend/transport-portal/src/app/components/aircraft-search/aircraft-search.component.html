@@ -4,6 +4,14 @@
   <!-- Filter Form -->
   <div class="filter-panel">
     <h3>Filters</h3>
+    
+    <!-- Manufacturer-State Picker -->
+    <div style="margin-bottom: 1.5rem;">
+      <app-manufacturer-state-picker
+        (selectionChange)="onManufacturerStateSelection($event)"
+      ></app-manufacturer-state-picker>
+    </div>
+    
     <div class="filter-grid">
       <div class="filter-field">
         <label for="manufacturer">Manufacturer</label>
@@ -12,40 +20,6 @@
           id="manufacturer" 
           [(ngModel)]="manufacturer" 
           placeholder="e.g., Cessna, Boeing"
-          (keyup.enter)="searchAircraft()"
-        />
-      </div>
-      
-      <div class="filter-field">
-        <label for="model">Model</label>
-        <input 
-          type="text" 
-          id="model" 
-          [(ngModel)]="model" 
-          placeholder="e.g., 172, 737"
-          (keyup.enter)="searchAircraft()"
-        />
-      </div>
-      
-      <div class="filter-field">
-        <label for="yearMin">Year From</label>
-        <input 
-          type="number" 
-          id="yearMin" 
-          [(ngModel)]="yearMin" 
-          placeholder="1900"
-          (keyup.enter)="searchAircraft()"
-        />
-      </div>
-      
-      <div class="filter-field">
-        <label for="yearMax">Year To</label>
-        <input 
-          type="number" 
-          id="yearMax" 
-          [(ngModel)]="yearMax" 
-          placeholder="2025"
-          (keyup.enter)="searchAircraft()"
         />
       </div>
       
@@ -57,15 +31,51 @@
           [(ngModel)]="state_province" 
           placeholder="e.g., CA, TX"
           maxlength="2"
-          (keyup.enter)="searchAircraft()"
+        />
+      </div>
+      
+      <div class="filter-field">
+        <label for="model">Model</label>
+        <input 
+          type="text" 
+          id="model" 
+          [(ngModel)]="model" 
+          placeholder="e.g., 172, 737"
+        />
+      </div>
+      
+      <div class="filter-field">
+        <label for="yearMin">Year From</label>
+        <input 
+          type="number" 
+          id="yearMin" 
+          [(ngModel)]="yearMin" 
+          placeholder="1900"
+        />
+      </div>
+      
+      <div class="filter-field">
+        <label for="yearMax">Year To</label>
+        <input 
+          type="number" 
+          id="yearMax" 
+          [(ngModel)]="yearMax" 
+          placeholder="2025"
         />
       </div>
     </div>
     
     <div class="filter-actions">
-      <button class="btn btn-primary" (click)="searchAircraft()">Search</button>
+      <button class="btn btn-primary" (click)="searchAircraft()" [disabled]="loading">
+        {{ loading ? 'Searching...' : 'Search' }}
+      </button>
       <button class="btn btn-secondary" (click)="resetFilters()">Reset</button>
     </div>
+  </div>
+  
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading">
+    <p>Loading aircraft data...</p>
   </div>
   
   <!-- Error State -->
@@ -73,55 +83,55 @@
     <p>{{ error }}</p>
   </div>
   
-  <!-- Results Section -->
-  <div *ngIf="hasSearched && !error" class="results-section">
-    <!-- Results Table -->
-    <app-results-table
-      [vehicles]="vehicles"
-      [loading]="loading"
-      (viewDetails)="onViewDetails($event)"
-    ></app-results-table>
+  <!-- Results Display -->
+  <div *ngIf="!loading && !error && vehicles.length > 0" class="results-container">
+    <div class="results-header">
+      <h3>Results</h3>
+      <p class="results-count">Showing {{ vehicles.length }} of {{ totalRecords }} aircraft</p>
+    </div>
     
-    <!-- Pagination -->
-    <app-pagination
-      *ngIf="!loading && vehicles.length > 0"
-      [currentPage]="currentPage"
-      [pageSize]="pageSize"
-      [totalResults]="totalRecords"
-      (pageChange)="onPageChange($event)"
-    ></app-pagination>
+    <table class="results-table">
+      <thead>
+        <tr>
+          <th>Registration</th>
+          <th>Manufacturer</th>
+          <th>Model</th>
+          <th>Year</th>
+          <th>State</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let aircraft of vehicles">
+          <td>{{ aircraft.registration_id }}</td>
+          <td>{{ aircraft.manufacturer }}</td>
+          <td>{{ aircraft.model }}</td>
+          <td>{{ aircraft.year || 'N/A' }}</td>
+          <td>{{ aircraft.location?.state_province || 'N/A' }}</td>
+        </tr>
+      </tbody>
+    </table>
     
-    <!-- Histograms Section -->
-    <div *ngIf="!loading && vehicles.length > 0" class="histograms-section">
-      <div class="histogram-grid">
-        <!-- Histogram 1: By Manufacturer -->
-        <app-histogram
-          title="By Manufacturer"
-          [data]="manufacturerHistogramData"
-          [clickable]="true"
-          [selectedLabel]="selectedManufacturer"
-          (barClick)="onManufacturerClick($event)"
-        ></app-histogram>
-        
-        <!-- Histogram 2: Models (filtered by selected manufacturer) -->
-        <app-histogram
-          *ngIf="selectedManufacturer"
-          [title]="'Models by ' + selectedManufacturer"
-          [data]="modelHistogramData"
-          [clickable]="false"
-        ></app-histogram>
-      </div>
-      
-      <div *ngIf="selectedManufacturer" class="clear-selection">
-        <button class="btn btn-secondary" (click)="onManufacturerClick(null)">
-          Clear Manufacturer Selection
-        </button>
-      </div>
+    <div class="pagination">
+      <button 
+        class="btn btn-secondary" 
+        (click)="onPageChange(currentPage - 1)" 
+        [disabled]="currentPage <= 1"
+      >
+        Previous
+      </button>
+      <span class="page-info">Page {{ currentPage }}</span>
+      <button 
+        class="btn btn-secondary" 
+        (click)="onPageChange(currentPage + 1)"
+        [disabled]="vehicles.length < pageSize"
+      >
+        Next
+      </button>
     </div>
   </div>
   
-  <!-- No Search Performed Message -->
-  <div *ngIf="!hasSearched && !loading" class="no-search">
-    <p>Enter search criteria and click Search to view results.</p>
+  <!-- No Results Message -->
+  <div *ngIf="!loading && !error && hasSearched && vehicles.length === 0" class="no-results">
+    <p>No aircraft found matching your criteria.</p>
   </div>
 </div>

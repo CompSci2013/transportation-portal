@@ -14,7 +14,7 @@ interface ManufacturerStateCombination {
   styleUrls: ['./manufacturer-state-picker.component.scss']
 })
 export class ManufacturerStatePickerComponent implements OnInit {
-  @Output() selectionChange = new EventEmitter<{manufacturer: string, state: string}>();
+  @Output() selectionChange = new EventEmitter<Array<{manufacturer: string, state: string}>>();
   
   options: FilterOption[] = [];
   loading: boolean = false;
@@ -40,6 +40,8 @@ export class ManufacturerStatePickerComponent implements OnInit {
         this.options = response.items.map(item => ({
           value: `${item.manufacturer}|${item.state}`,
           label: `${item.manufacturer} - ${item.state}`,
+          manufacturer: item.manufacturer,
+          state: item.state,
           count: item.count
         }));
         this.loading = false;
@@ -57,13 +59,11 @@ export class ManufacturerStatePickerComponent implements OnInit {
     this.loadOptions();
   }
 
-  onSelectionChange(value: string): void {
-    if (!value) {
-      this.selectionChange.emit({ manufacturer: '', state: '' });
-      return;
-    }
-
-    const [manufacturer, state] = value.split('|');
-    this.selectionChange.emit({ manufacturer, state });
+  onSelectionChange(values: string[]): void {
+    const selections = values.map(value => {
+      const [manufacturer, state] = value.split('|');
+      return { manufacturer, state };
+    });
+    this.selectionChange.emit(selections);
   }
 }

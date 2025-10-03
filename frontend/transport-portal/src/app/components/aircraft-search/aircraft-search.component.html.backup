@@ -1,0 +1,127 @@
+<div class="search-container">
+  <h2>Search Aircraft Registry</h2>
+  
+  <!-- Filter Form -->
+  <div class="filter-panel">
+    <h3>Filters</h3>
+    <div class="filter-grid">
+      <div class="filter-field">
+        <label for="manufacturer">Manufacturer</label>
+        <input 
+          type="text" 
+          id="manufacturer" 
+          [(ngModel)]="manufacturer" 
+          placeholder="e.g., Cessna, Boeing"
+          (keyup.enter)="searchAircraft()"
+        />
+      </div>
+      
+      <div class="filter-field">
+        <label for="model">Model</label>
+        <input 
+          type="text" 
+          id="model" 
+          [(ngModel)]="model" 
+          placeholder="e.g., 172, 737"
+          (keyup.enter)="searchAircraft()"
+        />
+      </div>
+      
+      <div class="filter-field">
+        <label for="yearMin">Year From</label>
+        <input 
+          type="number" 
+          id="yearMin" 
+          [(ngModel)]="yearMin" 
+          placeholder="1900"
+          (keyup.enter)="searchAircraft()"
+        />
+      </div>
+      
+      <div class="filter-field">
+        <label for="yearMax">Year To</label>
+        <input 
+          type="number" 
+          id="yearMax" 
+          [(ngModel)]="yearMax" 
+          placeholder="2025"
+          (keyup.enter)="searchAircraft()"
+        />
+      </div>
+      
+      <div class="filter-field">
+        <label for="state_province">State</label>
+        <input 
+          type="text" 
+          id="state_province" 
+          [(ngModel)]="state_province" 
+          placeholder="e.g., CA, TX"
+          maxlength="2"
+          (keyup.enter)="searchAircraft()"
+        />
+      </div>
+    </div>
+    
+    <div class="filter-actions">
+      <button class="btn btn-primary" (click)="searchAircraft()">Search</button>
+      <button class="btn btn-secondary" (click)="resetFilters()">Reset</button>
+    </div>
+  </div>
+  
+  <!-- Error State -->
+  <div *ngIf="error" class="error">
+    <p>{{ error }}</p>
+  </div>
+  
+  <!-- Results Section -->
+  <div *ngIf="hasSearched && !error" class="results-section">
+    <!-- Results Table -->
+    <app-results-table
+      [vehicles]="vehicles"
+      [loading]="loading"
+      (viewDetails)="onViewDetails($event)"
+    ></app-results-table>
+    
+    <!-- Pagination -->
+    <app-pagination
+      *ngIf="!loading && vehicles.length > 0"
+      [currentPage]="currentPage"
+      [pageSize]="pageSize"
+      [totalResults]="totalRecords"
+      (pageChange)="onPageChange($event)"
+    ></app-pagination>
+    
+    <!-- Histograms Section -->
+    <div *ngIf="!loading && vehicles.length > 0" class="histograms-section">
+      <div class="histogram-grid">
+        <!-- Histogram 1: By Manufacturer -->
+        <app-histogram
+          title="By Manufacturer"
+          [data]="manufacturerHistogramData"
+          [clickable]="true"
+          [selectedLabel]="selectedManufacturer"
+          (barClick)="onManufacturerClick($event)"
+        ></app-histogram>
+        
+        <!-- Histogram 2: Models (filtered by selected manufacturer) -->
+        <app-histogram
+          *ngIf="selectedManufacturer"
+          [title]="'Models by ' + selectedManufacturer"
+          [data]="modelHistogramData"
+          [clickable]="false"
+        ></app-histogram>
+      </div>
+      
+      <div *ngIf="selectedManufacturer" class="clear-selection">
+        <button class="btn btn-secondary" (click)="onManufacturerClick(null)">
+          Clear Manufacturer Selection
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- No Search Performed Message -->
+  <div *ngIf="!hasSearched && !loading" class="no-search">
+    <p>Enter search criteria and click Search to view results.</p>
+  </div>
+</div>

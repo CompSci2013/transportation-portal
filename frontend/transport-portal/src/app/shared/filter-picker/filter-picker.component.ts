@@ -5,6 +5,8 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 export interface FilterOption {
   value: string;
   label: string;
+  manufacturer: string;
+  state: string;
   count?: number;
 }
 
@@ -18,16 +20,16 @@ export class FilterPickerComponent implements OnInit {
   @Input() placeholder: string = 'Search...';
   @Input() options: FilterOption[] = [];
   @Input() loading: boolean = false;
-  @Output() selectionChange = new EventEmitter<string>();
+  @Output() selectionChange = new EventEmitter<string[]>();
   @Output() searchChange = new EventEmitter<string>();
 
   searchControl = new FormControl('');
   filteredOptions: FilterOption[] = [];
+  selectedValues: Set<string> = new Set();
 
   ngOnInit(): void {
     this.filteredOptions = this.options;
 
-    // Emit search changes with debounce
     this.searchControl.valueChanges.pipe(
       debounceTime(300),
       distinctUntilChanged()
@@ -38,7 +40,6 @@ export class FilterPickerComponent implements OnInit {
   }
 
   ngOnChanges(): void {
-    // Update filtered options when input options change
     this.filterOptions(this.searchControl.value || '');
   }
 
@@ -50,17 +51,27 @@ export class FilterPickerComponent implements OnInit {
 
     const term = searchTerm.toLowerCase();
     this.filteredOptions = this.options.filter(option =>
-      option.label.toLowerCase().includes(term) ||
-      option.value.toLowerCase().includes(term)
+      option.manufacturer.toLowerCase().includes(term) ||
+      option.state.toLowerCase().includes(term)
     );
   }
 
-  selectOption(option: FilterOption): void {
-    this.selectionChange.emit(option.value);
+  toggleOption(option: FilterOption): void {
+    if (this.selectedValues.has(option.value)) {
+      this.selectedValues.delete(option.value);
+    } else {
+      this.selectedValues.add(option.value);
+    }
+    this.selectionChange.emit(Array.from(this.selectedValues));
+  }
+
+  isSelected(value: string): boolean {
+    return this.selectedValues.has(value);
   }
 
   clearSelection(): void {
     this.searchControl.setValue('');
-    this.selectionChange.emit('');
+    this.selectedValues.clear();
+    this.selectionChange.emit([]);
   }
 }
