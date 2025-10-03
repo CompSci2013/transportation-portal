@@ -168,7 +168,7 @@ exports.getManufacturerStateCombinations = async (req, res) => {
 
     // Aggregation query for unique manufacturer + state combinations
     const response = await esClient.search({
-      index: INDEX_NAME,
+      index: process.env.ELASTICSEARCH_INDEX,
       size: 0,
       body: {
         query: search ? {
@@ -188,7 +188,7 @@ exports.getManufacturerStateCombinations = async (req, res) => {
             aggs: {
               states: {
                 terms: {
-                  field: 'location.state_province.keyword',
+                  field: 'location.state_province',
                   size: 100
                 }
               }

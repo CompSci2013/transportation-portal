@@ -1,1 +1,11 @@
-<p>manufacturer-state-picker works!</p>
+<div class="manufacturer-state-picker">
+  <app-filter-picker
+    label="Manufacturer + State"
+    placeholder="Search manufacturer and state..."
+    [options]="options"
+    [loading]="loading"
+    (selectionChange)="onSelectionChange($event)"
+    (searchChange)="onSearchChange($event)"
+  >
+  </app-filter-picker>
+</div>

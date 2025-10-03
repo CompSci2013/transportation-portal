@@ -5,6 +5,17 @@ import { Aircraft } from '../models/aircraft.model';
 import { SearchFilters, SearchResponse } from '../models';
 import { environment } from '../../environments/environment';
 
+interface ManufacturerStateCombinationsResponse {
+  total: number;
+  page: number;
+  size: number;
+  items: Array<{
+    manufacturer: string;
+    state: string;
+    count: number;
+  }>;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -27,7 +38,7 @@ export class ApiService {
         params = params.set(key, value.toString());
       }
     });
-    
+
     return this.http.get<SearchResponse>(`${this.apiUrl}/aircraft`, { params });
   }
 
@@ -51,5 +62,27 @@ export class ApiService {
    */
   getInfo(): Observable<any> {
     return this.http.get(`${this.apiUrl}/info`);
+  }
+
+  /**
+   * Get manufacturer-state combinations with pagination and search
+   */
+  getManufacturerStateCombinations(
+    page: number = 1, 
+    size: number = 50, 
+    search: string = ''
+  ): Observable<ManufacturerStateCombinationsResponse> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+    
+    if (search) {
+      params = params.set('search', search);
+    }
+
+    return this.http.get<ManufacturerStateCombinationsResponse>(
+      `${this.apiUrl}/manufacturer-state-combinations`, 
+      { params }
+    );
   }
 }
