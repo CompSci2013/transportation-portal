@@ -108,6 +108,11 @@ export class StateManagementService implements OnDestroy {
   }
 
   private hasSearchableFilters(filters: SearchFilters): boolean {
+    // Check for manufacturer-state combinations
+    if (filters.manufacturerStateCombos && filters.manufacturerStateCombos.length > 0) {
+      return true;
+    }
+
     return !!(
       filters.q ||
       filters.manufacturer ||

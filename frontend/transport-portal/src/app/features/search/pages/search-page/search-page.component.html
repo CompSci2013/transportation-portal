@@ -10,6 +10,7 @@
     <!-- Manufacturer-State Picker -->
     <div class="picker-container">
       <app-manufacturer-state-table-picker
+        [clearTrigger]="pickerClearTrigger"
         (selectionChange)="onManufacturerStateSelection($event)"
       ></app-manufacturer-state-table-picker>
     </div>

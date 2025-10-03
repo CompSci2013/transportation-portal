@@ -85,12 +85,30 @@ export class RouteStateService {
   filtersToParams(filters: SearchFilters): Params {
     const params: Params = {};
     
-    Object.keys(filters).forEach(key => {
-      const value = (filters as any)[key];
-      if (value !== undefined && value !== null && value !== '') {
-        params[key] = String(value);
-      }
-    });
+    // Handle manufacturer-state combinations
+    if (filters.manufacturerStateCombos && filters.manufacturerStateCombos.length > 0) {
+      params['combos'] = filters.manufacturerStateCombos
+        .map(c => `${c.manufacturer}:${c.state}`)
+        .join(',');
+    } else {
+      // Fallback to individual fields
+      if (filters.manufacturer) params['manufacturer'] = filters.manufacturer;
+      if (filters.state) params['state'] = filters.state;
+    }
+    
+    // Other filters
+    if (filters.q) params['q'] = filters.q;
+    if (filters.type) params['type'] = filters.type;
+    if (filters.model) params['model'] = filters.model;
+    if (filters.yearMin !== undefined && filters.yearMin !== null) {
+      params['yearMin'] = String(filters.yearMin);
+    }
+    if (filters.yearMax !== undefined && filters.yearMax !== null) {
+      params['yearMax'] = String(filters.yearMax);
+    }
+    if (filters.status) params['status'] = filters.status;
+    if (filters.page) params['page'] = String(filters.page);
+    if (filters.size) params['size'] = String(filters.size);
     
     return params;
   }
@@ -98,13 +116,25 @@ export class RouteStateService {
   paramsToFilters(params: Params): SearchFilters {
     const filters: SearchFilters = {};
     
+    // Handle manufacturer-state combinations from URL
+    if (params['combos']) {
+      const combosArray = params['combos'].split(',').map((combo: string) => {
+        const [manufacturer, state] = combo.split(':');
+        return { manufacturer, state };
+      });
+      filters.manufacturerStateCombos = combosArray;
+    } else {
+      // Fallback to individual fields
+      if (params['manufacturer']) filters.manufacturer = params['manufacturer'];
+      if (params['state']) filters.state = params['state'];
+    }
+    
+    // Other filters
     if (params['q']) filters.q = params['q'];
     if (params['type']) filters.type = params['type'] as 'plane' | 'automobile';
-    if (params['manufacturer']) filters.manufacturer = params['manufacturer'];
     if (params['model']) filters.model = params['model'];
     if (params['yearMin']) filters.yearMin = parseInt(params['yearMin'], 10);
     if (params['yearMax']) filters.yearMax = parseInt(params['yearMax'], 10);
-    if (params['state']) filters.state = params['state'];
     if (params['status']) filters.status = params['status'];
     if (params['page']) filters.page = parseInt(params['page'], 10);
     if (params['size']) filters.size = parseInt(params['size'], 10);

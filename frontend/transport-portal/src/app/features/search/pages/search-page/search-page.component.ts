@@ -14,12 +14,11 @@ interface HistogramData {
   styleUrls: ['./search-page.component.scss']
 })
 export class SearchPageComponent implements OnInit, OnDestroy {
-  // State subscriptions
   state$ = this.stateService.state$;
   private subscription?: Subscription;
   
-  // Derived state for template
   state: SearchState | null = null;
+  pickerClearTrigger: number = 0; // Increment to clear picker
 
   constructor(private stateService: StateManagementService) { }
 
@@ -33,24 +32,27 @@ export class SearchPageComponent implements OnInit, OnDestroy {
     this.subscription?.unsubscribe();
   }
 
-  // Event handlers - delegate to state service
   onSearch(filters: SearchFilters): void {
+    // Clear manufacturerStateCombos when form searches
+    filters.manufacturerStateCombos = undefined;
     this.stateService.updateFilters(filters);
+    
+    // Clear picker visually
+    this.pickerClearTrigger++;
   }
 
   onReset(): void {
     this.stateService.resetSearch();
+    this.pickerClearTrigger++;
   }
 
   onManufacturerStateSelection(selections: Array<{manufacturer: string, state: string}>): void {
-    if (selections.length > 0) {
-      const first = selections[0];
-      this.stateService.updateFilters({
-        ...this.state?.filters,
-        manufacturer: first.manufacturer,
-        state: first.state
-      });
-    }
+    this.stateService.updateFilters({
+      ...this.state?.filters,
+      manufacturerStateCombos: selections.length > 0 ? selections : undefined,
+      manufacturer: undefined,
+      state: undefined
+    });
   }
 
   onPageChange(page: number): void {
@@ -62,11 +64,9 @@ export class SearchPageComponent implements OnInit, OnDestroy {
   }
 
   onViewDetails(transportId: string): void {
-    // TODO: Navigate to detail page
     console.log('View details for:', transportId);
   }
 
-  // Computed properties for child components
   get currentFilters(): SearchFilters {
     return this.state?.filters || {};
   }

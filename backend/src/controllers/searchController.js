@@ -14,7 +14,8 @@ exports.searchAircraft = async (req, res) => {
       year_max,
       state = '',
       page = 1,
-      size = 20
+      size = 20,
+      manufacturer_state_combos = ''
     } = req.query;
 
     // Build Elasticsearch query
@@ -29,16 +30,41 @@ exports.searchAircraft = async (req, res) => {
       });
     }
 
-    if (manufacturer) {
-      must.push({ match: { manufacturer: manufacturer } });
+    // Handle manufacturer-state combinations (takes precedence over individual fields)
+    if (manufacturer_state_combos) {
+      const combos = manufacturer_state_combos.split(',').map(combo => {
+        const [mfr, st] = combo.split(':');
+        return { manufacturer: mfr.trim(), state: st.trim() };
+      });
+
+      if (combos.length > 0) {
+        must.push({
+          bool: {
+            should: combos.map(combo => ({
+              bool: {
+                must: [
+                  { term: { 'manufacturer.keyword': combo.manufacturer } },
+                  { term: { 'location.state_province': combo.state } }
+                ]
+              }
+            })),
+            minimum_should_match: 1
+          }
+        });
+      }
+    } else {
+      // Fallback to individual manufacturer/state (for backward compatibility)
+      if (manufacturer) {
+        must.push({ term: { 'manufacturer.keyword': manufacturer } });
+      }
+
+      if (state) {
+        must.push({ term: { 'location.state_province': state } });
+      }
     }
 
     if (model) {
       must.push({ match: { model: model } });
-    }
-
-    if (state) {
-      must.push({ term: { 'location.state_province': state } });
     }
 
     if (year_min || year_max) {

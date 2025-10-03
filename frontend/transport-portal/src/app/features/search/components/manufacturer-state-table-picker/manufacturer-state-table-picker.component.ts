@@ -1,4 +1,4 @@
-import { Component, OnInit, Output, EventEmitter, OnDestroy } from '@angular/core';
+import { Component, OnInit, Output, EventEmitter, OnDestroy, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { ApiService } from '../../../../services/api.service';
 import { Subscription } from 'rxjs';
 
@@ -19,7 +19,8 @@ interface ManufacturerStateSelection {
   templateUrl: './manufacturer-state-table-picker.component.html',
   styleUrls: ['./manufacturer-state-table-picker.component.scss']
 })
-export class ManufacturerStateTablePickerComponent implements OnInit, OnDestroy {
+export class ManufacturerStateTablePickerComponent implements OnInit, OnDestroy, OnChanges {
+  @Input() clearTrigger: number = 0; // Increment this to trigger clear from parent
   @Output() selectionChange = new EventEmitter<ManufacturerStateSelection[]>();
 
   rows: PickerRow[] = [];
@@ -33,12 +34,23 @@ export class ManufacturerStateTablePickerComponent implements OnInit, OnDestroy 
   loading: boolean = false;
   
   private subscription?: Subscription;
+  private lastClearTrigger: number = 0;
 
   constructor(private apiService: ApiService) { }
 
   ngOnInit(): void {
     this.loadData();
     this.loadPageSizePreference();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['clearTrigger'] && !changes['clearTrigger'].firstChange) {
+      const newValue = changes['clearTrigger'].currentValue;
+      if (newValue !== this.lastClearTrigger) {
+        this.lastClearTrigger = newValue;
+        this.selectedRows.clear();
+      }
+    }
   }
 
   ngOnDestroy(): void {
@@ -107,7 +119,7 @@ export class ManufacturerStateTablePickerComponent implements OnInit, OnDestroy 
         row.state.toLowerCase().includes(term)
       );
     }
-    this.currentPage = 1; // Reset to first page after filter
+    this.currentPage = 1;
   }
 
   onSearchChange(): void {
@@ -168,13 +180,13 @@ export class ManufacturerStateTablePickerComponent implements OnInit, OnDestroy 
       const end = Math.min(this.totalPages, this.currentPage + 2);
       
       if (start > 1) pages.push(1);
-      if (start > 2) pages.push(-1); // Ellipsis
+      if (start > 2) pages.push(-1);
       
       for (let i = start; i <= end; i++) {
         pages.push(i);
       }
       
-      if (end < this.totalPages - 1) pages.push(-1); // Ellipsis
+      if (end < this.totalPages - 1) pages.push(-1);
       if (end < this.totalPages) pages.push(this.totalPages);
     }
     
@@ -203,6 +215,7 @@ export class ManufacturerStateTablePickerComponent implements OnInit, OnDestroy 
 
   onClear(): void {
     this.selectedRows.clear();
+    this.onApply(); // Trigger the apply to notify parent
   }
 
   private loadPageSizePreference(): void {

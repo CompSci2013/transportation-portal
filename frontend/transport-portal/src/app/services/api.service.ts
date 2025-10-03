@@ -19,26 +19,41 @@ export class ApiService {
   searchAircraft(filters: SearchFilters): Observable<SearchResponse> {
     let params = new HttpParams();
     
-    // Parameter mapping: frontend (camelCase) -> backend (snake_case)
-    const paramMap: { [key: string]: string } = {
-      'q': 'query',
-      'manufacturer': 'manufacturer',
-      'model': 'model',
-      'yearMin': 'year_min',
-      'yearMax': 'year_max',
-      'state': 'state',
-      'page': 'page',
-      'size': 'size'
-    };
-    
-    Object.keys(filters).forEach(key => {
-      const value = (filters as any)[key];
-      const backendParam = paramMap[key] || key;
-      
-      if (value !== undefined && value !== null && value !== '') {
-        params = params.set(backendParam, value.toString());
+    // Handle manufacturer-state combinations (takes precedence)
+    if (filters.manufacturerStateCombos && filters.manufacturerStateCombos.length > 0) {
+      const combosString = filters.manufacturerStateCombos
+        .map(combo => `${combo.manufacturer}:${combo.state}`)
+        .join(',');
+      params = params.set('manufacturer_state_combos', combosString);
+    } else {
+      // Fallback to individual fields
+      if (filters.manufacturer) {
+        params = params.set('manufacturer', filters.manufacturer);
       }
-    });
+      if (filters.state) {
+        params = params.set('state', filters.state);
+      }
+    }
+    
+    // Other parameters
+    if (filters.q) {
+      params = params.set('query', filters.q);
+    }
+    if (filters.model) {
+      params = params.set('model', filters.model);
+    }
+    if (filters.yearMin !== undefined && filters.yearMin !== null) {
+      params = params.set('year_min', filters.yearMin.toString());
+    }
+    if (filters.yearMax !== undefined && filters.yearMax !== null) {
+      params = params.set('year_max', filters.yearMax.toString());
+    }
+    if (filters.page) {
+      params = params.set('page', filters.page.toString());
+    }
+    if (filters.size) {
+      params = params.set('size', filters.size.toString());
+    }
     
     return this.http.get<SearchResponse>(`${this.apiUrl}/aircraft`, { params });
   }
