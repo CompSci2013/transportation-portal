@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { Aircraft } from '../../models';
+import { TransportVehicle } from '../../models';
 
 @Component({
   selector: 'app-results-table',
@@ -7,7 +7,7 @@ import { Aircraft } from '../../models';
   styleUrls: ['./results-table.component.scss']
 })
 export class ResultsTableComponent {
-  @Input() aircraft: Aircraft[] = [];
+  @Input() vehicles: TransportVehicle[] = [];
   @Input() loading: boolean = false;
   @Output() viewDetails = new EventEmitter<string>();
 
@@ -16,6 +16,6 @@ export class ResultsTableComponent {
   }
 
   get hasResults(): boolean {
-    return this.aircraft.length > 0;
+    return this.vehicles.length > 0;
   }
 }

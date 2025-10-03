@@ -77,14 +77,14 @@
   <div *ngIf="hasSearched && !error" class="results-section">
     <!-- Results Table -->
     <app-results-table
-      [aircraft]="aircraft"
+      [vehicles]="vehicles"
       [loading]="loading"
       (viewDetails)="onViewDetails($event)"
     ></app-results-table>
     
     <!-- Pagination -->
     <app-pagination
-      *ngIf="!loading && aircraft.length > 0"
+      *ngIf="!loading && vehicles.length > 0"
       [currentPage]="currentPage"
       [pageSize]="pageSize"
       [totalResults]="totalRecords"
@@ -92,7 +92,7 @@
     ></app-pagination>
     
     <!-- Histograms Section -->
-    <div *ngIf="!loading && aircraft.length > 0" class="histograms-section">
+    <div *ngIf="!loading && vehicles.length > 0" class="histograms-section">
       <div class="histogram-grid">
         <!-- Histogram 1: By Manufacturer -->
         <app-histogram

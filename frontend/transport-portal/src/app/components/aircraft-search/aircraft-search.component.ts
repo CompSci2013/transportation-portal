@@ -118,7 +118,7 @@ export class AircraftSearchComponent implements OnInit, OnDestroy {
     return this.state?.error || null;
   }
 
-  get aircraft() {
+  get vehicles() {
     return this.state?.results || [];
   }
 

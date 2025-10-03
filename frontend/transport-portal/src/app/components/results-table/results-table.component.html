@@ -4,7 +4,7 @@
   </div>
 
   <div *ngIf="!hasResults && !loading" class="no-results">
-    <p>No aircraft found matching your criteria.</p>
+    <p>No vehicles found matching your criteria.</p>
     <p class="suggestion">Try adjusting your filters or reset to see all results.</p>
   </div>
 
@@ -21,17 +21,17 @@
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let aircraft of aircraft">
-        <td class="registration">{{ aircraft.registration_id || 'N/A' }}</td>
-        <td>{{ aircraft.manufacturer || 'Unknown' }}</td>
-        <td>{{ aircraft.model || 'Unknown' }}</td>
-        <td class="year">{{ aircraft.year || 'N/A' }}</td>
-        <td class="type">{{ aircraft.category || 'N/A' }}</td>
-        <td>{{ aircraft.location?.state_province || 'N/A' }}</td>
+      <tr *ngFor="let vehicle of vehicles">
+        <td class="registration">{{ vehicle.registration_id || 'N/A' }}</td>
+        <td>{{ vehicle.manufacturer || 'Unknown' }}</td>
+        <td>{{ vehicle.model || 'Unknown' }}</td>
+        <td class="year">{{ vehicle.year || 'N/A' }}</td>
+        <td class="type">{{ vehicle.category || 'N/A' }}</td>
+        <td>{{ vehicle.location?.state_province || 'N/A' }}</td>
         <td class="actions">
           <button 
             class="btn-link" 
-            (click)="onViewDetails(aircraft.transport_id)"
+            (click)="onViewDetails(vehicle.transport_id)"
           >
             View Details
           </button>
