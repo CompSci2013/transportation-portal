@@ -1,4 +1,10 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  ViewChild,
+  ElementRef,
+} from '@angular/core';
 import { StateManagementService } from '../../../../core/services/state-management.service';
 import { SearchState, SearchFilters } from '../../../../models';
 import { Subscription } from 'rxjs';
@@ -11,19 +17,29 @@ interface HistogramData {
 @Component({
   selector: 'app-search-page',
   templateUrl: './search-page.component.html',
-  styleUrls: ['./search-page.component.scss']
+  styleUrls: ['./search-page.component.scss'],
 })
 export class SearchPageComponent implements OnInit, OnDestroy {
+  @ViewChild('resultsSection', { read: ElementRef })
+  resultsSection?: ElementRef;
+
   state$ = this.stateService.state$;
   private subscription?: Subscription;
-  
+
   state: SearchState | null = null;
   pickerClearTrigger: number = 0; // Increment to clear picker
 
-  constructor(private stateService: StateManagementService) { }
+  constructor(private stateService: StateManagementService) {}
 
   ngOnInit(): void {
-    this.subscription = this.state$.subscribe(state => {
+    this.subscription = this.state$.subscribe((state) => {
+      console.log(
+        'State updated, loading:',
+        state.loading,
+        'results count:',
+        state.results.length
+      );
+      console.log('Scroll position during state update:', window.pageYOffset);
       this.state = state;
     });
   }
@@ -36,7 +52,7 @@ export class SearchPageComponent implements OnInit, OnDestroy {
     // Clear manufacturerStateCombos when form searches
     filters.manufacturerStateCombos = undefined;
     this.stateService.updateFilters(filters);
-    
+
     // Clear picker visually
     this.pickerClearTrigger++;
   }
@@ -46,12 +62,14 @@ export class SearchPageComponent implements OnInit, OnDestroy {
     this.pickerClearTrigger++;
   }
 
-  onManufacturerStateSelection(selections: Array<{manufacturer: string, state: string}>): void {
+  onManufacturerStateSelection(
+    selections: Array<{ manufacturer: string; state: string }>
+  ): void {
     this.stateService.updateFilters({
       ...this.state?.filters,
       manufacturerStateCombos: selections.length > 0 ? selections : undefined,
       manufacturer: undefined,
-      state: undefined
+      state: undefined,
     });
   }
 
@@ -105,30 +123,34 @@ export class SearchPageComponent implements OnInit, OnDestroy {
 
   get manufacturerHistogramData(): HistogramData[] {
     if (!this.state?.statistics?.byManufacturer) return [];
-    
-    return Object.entries(this.state.statistics.byManufacturer).map(([label, count]) => ({
-      label,
-      count
-    }));
+
+    return Object.entries(this.state.statistics.byManufacturer).map(
+      ([label, count]) => ({
+        label,
+        count,
+      })
+    );
   }
 
   get modelsHistogramData(): HistogramData[] {
     if (!this.state?.statistics?.modelsByManufacturer) return [];
-    
+
     const selectedMfr = this.state.selectedManufacturer;
     const data: HistogramData[] = [];
-    
-    Object.entries(this.state.statistics.modelsByManufacturer).forEach(([manufacturer, models]) => {
-      if (selectedMfr && manufacturer !== selectedMfr) return;
-      
-      Object.entries(models).forEach(([model, count]) => {
-        data.push({
-          label: `${manufacturer} ${model}`,
-          count: count as number
+
+    Object.entries(this.state.statistics.modelsByManufacturer).forEach(
+      ([manufacturer, models]) => {
+        if (selectedMfr && manufacturer !== selectedMfr) return;
+
+        Object.entries(models).forEach(([model, count]) => {
+          data.push({
+            label: `${manufacturer} ${model}`,
+            count: count as number,
+          });
         });
-      });
-    });
-    
+      }
+    );
+
     return data;
   }
 }

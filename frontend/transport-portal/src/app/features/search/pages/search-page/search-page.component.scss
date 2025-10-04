@@ -6,7 +6,7 @@
 
 .page-header {
   margin-bottom: 2rem;
-  
+
   h1 {
     margin: 0;
     font-size: 2rem;
@@ -17,14 +17,14 @@
 
 .filters-section {
   margin-bottom: 2rem;
-  
+
   h2 {
     font-size: 1.3rem;
     font-weight: 600;
     margin: 0 0 1rem 0;
     color: #333;
   }
-  
+
   .picker-container {
     margin-bottom: 1.5rem;
   }
@@ -32,32 +32,32 @@
 
 .results-section {
   margin-top: 2rem;
-  
+
   .results-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1rem;
-    
+
     h2 {
       margin: 0;
       font-size: 1.3rem;
       font-weight: 600;
       color: #333;
     }
-    
+
     .results-count {
       margin: 0;
       font-size: 0.95rem;
       color: #666;
     }
   }
-  
+
   app-results-table {
     display: block;
     margin-bottom: 1.5rem;
   }
-  
+
   app-pagination {
     display: block;
     margin-bottom: 2rem;
@@ -68,14 +68,14 @@
   margin-top: 2rem;
   padding-top: 2rem;
   border-top: 2px solid #eee;
-  
+
   h2 {
     margin: 0 0 1.5rem 0;
     font-size: 1.3rem;
     font-weight: 600;
     color: #333;
   }
-  
+
   .histograms-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
@@ -93,7 +93,7 @@
   padding: 3rem;
   text-align: center;
   margin-top: 2rem;
-  
+
   p {
     margin: 0.5rem 0;
     font-size: 1rem;
@@ -104,7 +104,7 @@
 .error-state {
   border-color: #dc3545;
   background: #fff5f5;
-  
+
   p {
     color: #dc3545;
   }
@@ -127,11 +127,11 @@
   .search-page {
     padding: 1rem;
   }
-  
+
   .page-header h1 {
     font-size: 1.5rem;
   }
-  
+
   .results-section .results-header {
     flex-direction: column;
     align-items: flex-start;

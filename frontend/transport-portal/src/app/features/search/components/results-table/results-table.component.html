@@ -1,26 +1,23 @@
 <div class="results-table-container">
-  <p-table 
+  <p-table
     #dt
-    [value]="vehicles" 
+    [value]="vehicles"
     [loading]="loading"
-    [paginator]="true" 
-    [rows]="20" 
-    [rowsPerPageOptions]="[20, 50, 100]"
-    [showCurrentPageReport]="true"
-    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} aircraft"
-    [globalFilterFields]="['registration_id','manufacturer','model','category','location.state_province']"
     styleClass="p-datatable-striped"
     responsiveLayout="scroll"
-    dataKey="transport_id">
-    
+    dataKey="transport_id"
+  >
     <ng-template pTemplate="caption">
       <div class="table-header">
-        <h5>{{vehicles.length}} aircraft found</h5>
+        <h5>{{ totalRecords }} aircraft found</h5>
         <span class="p-input-icon-left">
           <i class="pi pi-search"></i>
-          <input pInputText type="text" 
-                 (input)="dt.filterGlobal($any($event.target).value, 'contains')" 
-                 placeholder="Search all fields..." />
+          <input
+            pInputText
+            type="text"
+            (input)="dt.filterGlobal($any($event.target).value, 'contains')"
+            placeholder="Search all fields..."
+          />
         </span>
       </div>
     </ng-template>
@@ -51,18 +48,20 @@
 
     <ng-template pTemplate="body" let-vehicle>
       <tr>
-        <td>{{ vehicle.registration_id || 'N/A' }}</td>
-        <td>{{ vehicle.manufacturer || 'Unknown' }}</td>
-        <td>{{ vehicle.model || 'Unknown' }}</td>
-        <td>{{ vehicle.year || 'N/A' }}</td>
-        <td>{{ vehicle.category || 'N/A' }}</td>
-        <td>{{ vehicle.location?.state_province || 'N/A' }}</td>
+        <td>{{ vehicle.registration_id || "N/A" }}</td>
+        <td>{{ vehicle.manufacturer || "Unknown" }}</td>
+        <td>{{ vehicle.model || "Unknown" }}</td>
+        <td>{{ vehicle.year || "N/A" }}</td>
+        <td>{{ vehicle.category || "N/A" }}</td>
+        <td>{{ vehicle.location?.state_province || "N/A" }}</td>
         <td>
-          <button pButton type="button" 
-                  label="View Details" 
-                  class="p-button-sm p-button-text"
-                  (click)="onViewDetails(vehicle.transport_id)">
-          </button>
+          <button
+            pButton
+            type="button"
+            label="View Details"
+            class="p-button-sm p-button-text"
+            (click)="onViewDetails(vehicle.transport_id)"
+          ></button>
         </td>
       </tr>
     </ng-template>
@@ -71,7 +70,9 @@
       <tr>
         <td colspan="7" class="no-results">
           <p>No vehicles found matching your criteria.</p>
-          <p class="suggestion">Try adjusting your filters or reset to see all results.</p>
+          <p class="suggestion">
+            Try adjusting your filters or reset to see all results.
+          </p>
         </td>
       </tr>
     </ng-template>

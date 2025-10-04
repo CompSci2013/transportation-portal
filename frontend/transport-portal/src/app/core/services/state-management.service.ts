@@ -7,34 +7,36 @@ import { RouteStateService } from './route-state.service';
 import { ApiService } from '../../services/api.service';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class StateManagementService implements OnDestroy {
   private destroy$ = new Subject<void>();
 
   // ========== PRIVATE STATE ==========
-  private stateSubject = new BehaviorSubject<SearchState>(this.getInitialState());
+  private stateSubject = new BehaviorSubject<SearchState>(
+    this.getInitialState()
+  );
 
   // ========== PUBLIC OBSERVABLES ==========
   public state$ = this.stateSubject.asObservable();
 
   public filters$ = this.state$.pipe(
-    map(state => state.filters),
+    map((state) => state.filters),
     distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b))
   );
 
   public results$ = this.state$.pipe(
-    map(state => state.results),
+    map((state) => state.results),
     distinctUntilChanged()
   );
 
   public statistics$ = this.state$.pipe(
-    map(state => state.statistics),
+    map((state) => state.statistics),
     distinctUntilChanged()
   );
 
   public loading$ = this.state$.pipe(
-    map(state => state.loading),
+    map((state) => state.loading),
     distinctUntilChanged()
   );
 
@@ -51,7 +53,7 @@ export class StateManagementService implements OnDestroy {
     return {
       filters: {
         page: 1,
-        size: 20
+        size: 20,
       },
       results: [],
       statistics: null,
@@ -59,7 +61,7 @@ export class StateManagementService implements OnDestroy {
       error: null,
       hasSearched: false,
       totalResults: 0,
-      selectedManufacturer: null
+      selectedManufacturer: null,
     };
   }
 
@@ -70,7 +72,7 @@ export class StateManagementService implements OnDestroy {
 
     this.updateState({
       filters,
-      selectedManufacturer
+      selectedManufacturer,
     });
 
     if (this.hasSearchableFilters(filters)) {
@@ -79,37 +81,43 @@ export class StateManagementService implements OnDestroy {
   }
 
   private watchUrlChanges(): void {
-    this.router.events.pipe(
-      filter(event => event instanceof NavigationEnd),
-      takeUntil(this.destroy$)
-    ).subscribe(() => {
-      const params = this.routeState.getCurrentParams();
-      const filters = this.routeState.paramsToFilters(params);
-      const selectedManufacturer = params['mfr'] || null;
-      
-      const currentState = this.stateSubject.value;
-      
-      // Only update if something actually changed
-      if (JSON.stringify(filters) !== JSON.stringify(currentState.filters) ||
-          selectedManufacturer !== currentState.selectedManufacturer) {
-        
-        this.updateState({ 
-          filters,
-          selectedManufacturer 
-        });
+    this.router.events
+      .pipe(
+        filter((event) => event instanceof NavigationEnd),
+        takeUntil(this.destroy$)
+      )
+      .subscribe(() => {
+        const params = this.routeState.getCurrentParams();
+        const filters = this.routeState.paramsToFilters(params);
+        const selectedManufacturer = params['mfr'] || null;
 
-        if (this.hasSearchableFilters(filters)) {
-          this.performSearch();
-        } else {
-          this.resetResults();
+        const currentState = this.stateSubject.value;
+
+        // Only update if something actually changed
+        if (
+          JSON.stringify(filters) !== JSON.stringify(currentState.filters) ||
+          selectedManufacturer !== currentState.selectedManufacturer
+        ) {
+          this.updateState({
+            filters,
+            selectedManufacturer,
+          });
+
+          if (this.hasSearchableFilters(filters)) {
+            this.performSearch();
+          } else {
+            this.resetResults();
+          }
         }
-      }
-    });
+      });
   }
 
   private hasSearchableFilters(filters: SearchFilters): boolean {
     // Check for manufacturer-state combinations
-    if (filters.manufacturerStateCombos && filters.manufacturerStateCombos.length > 0) {
+    if (
+      filters.manufacturerStateCombos &&
+      filters.manufacturerStateCombos.length > 0
+    ) {
       return true;
     }
 
@@ -132,12 +140,12 @@ export class StateManagementService implements OnDestroy {
   private syncStateToUrl(): void {
     const state = this.stateSubject.value;
     const params = this.routeState.filtersToParams(state.filters);
-    
+
     // Add selectedManufacturer to URL params
     if (state.selectedManufacturer) {
       params['mfr'] = state.selectedManufacturer;
     }
-    
+
     this.routeState.setParams(params, false);
   }
 
@@ -146,7 +154,7 @@ export class StateManagementService implements OnDestroy {
       results: [],
       statistics: null,
       hasSearched: false,
-      totalResults: 0
+      totalResults: 0,
     });
   }
 
@@ -157,7 +165,7 @@ export class StateManagementService implements OnDestroy {
     const newFilters = {
       ...currentFilters,
       ...filters,
-      page: 1  // Reset to page 1 on filter change
+      page: 1, // Reset to page 1 on filter change
     };
 
     this.updateState({ filters: newFilters });
@@ -188,7 +196,7 @@ export class StateManagementService implements OnDestroy {
           totalResults: response.total,
           loading: false,
           hasSearched: true,
-          error: null
+          error: null,
         });
       },
       error: (error) => {
@@ -197,10 +205,10 @@ export class StateManagementService implements OnDestroy {
           error: 'Failed to load search results. Please try again.',
           results: [],
           statistics: null,
-          hasSearched: true
+          hasSearched: true,
         });
         console.error('Search error:', error);
-      }
+      },
     });
   }
 
@@ -221,7 +229,7 @@ export class StateManagementService implements OnDestroy {
   resetSearch(): void {
     const initialFilters: SearchFilters = {
       page: 1,
-      size: 20
+      size: 20,
     };
 
     this.updateState({
@@ -231,7 +239,7 @@ export class StateManagementService implements OnDestroy {
       hasSearched: false,
       totalResults: 0,
       error: null,
-      selectedManufacturer: null
+      selectedManufacturer: null,
     });
 
     this.syncStateToUrl();

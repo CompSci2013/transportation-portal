@@ -4,11 +4,12 @@ import { TransportVehicle } from '../../../../models';
 @Component({
   selector: 'app-results-table',
   templateUrl: './results-table.component.html',
-  styleUrls: ['./results-table.component.scss']
+  styleUrls: ['./results-table.component.scss'],
 })
 export class ResultsTableComponent {
   @Input() vehicles: TransportVehicle[] = [];
   @Input() loading: boolean = false;
+  @Input() totalRecords: number = 0;
   @Output() viewDetails = new EventEmitter<string>();
 
   onViewDetails(transportId: string): void {

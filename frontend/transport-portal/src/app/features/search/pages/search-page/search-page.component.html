@@ -6,7 +6,7 @@
   <!-- Filters Section -->
   <section class="filters-section">
     <h2>Filters</h2>
-    
+
     <!-- Manufacturer-State Picker -->
     <div class="picker-container">
       <app-manufacturer-state-table-picker
@@ -15,7 +15,7 @@
         (selectionChange)="onManufacturerStateSelection($event)"
       ></app-manufacturer-state-table-picker>
     </div>
-    
+
     <!-- Search Form -->
     <app-search-form
       [initialFilters]="currentFilters"
@@ -36,7 +36,7 @@
   </div>
 
   <!-- Results Section -->
-  <section *ngIf="!loading && !error && hasSearched" class="results-section">
+  <section #resultsSection *ngIf="hasSearched" class="results-section">
     <div class="results-header">
       <h2>Results</h2>
       <p class="results-count">{{ totalRecords }} aircraft found</p>
@@ -46,6 +46,7 @@
     <app-results-table
       [vehicles]="vehicles"
       [loading]="loading"
+      [totalRecords]="totalRecords"
       (viewDetails)="onViewDetails($event)"
     ></app-results-table>
 
@@ -69,7 +70,7 @@
           [maxHeight]="'400px'"
           (barClick)="onManufacturerBarClick($event)"
         ></app-histogram>
-        
+
         <app-histogram
           [title]="'Models by Manufacturer'"
           [data]="modelsHistogramData"
@@ -81,9 +82,14 @@
   </section>
 
   <!-- No Results State -->
-  <div *ngIf="!loading && !error && hasSearched && vehicles.length === 0" class="no-results">
+  <div
+    *ngIf="!loading && !error && hasSearched && vehicles.length === 0"
+    class="no-results"
+  >
     <p>No aircraft found matching your criteria.</p>
-    <p class="suggestion">Try adjusting your filters or clearing them to see more results.</p>
+    <p class="suggestion">
+      Try adjusting your filters or clearing them to see more results.
+    </p>
   </div>
 
   <!-- Welcome State (No Search Yet) -->

@@ -9,11 +9,11 @@ const routes: Routes = [
   { path: 'search', component: SearchPageComponent },
   { path: 'aircraft/:id', component: AircraftDetailComponent },
   { path: 'statistics', component: StatisticsDashboardComponent },
-  { path: '**', redirectTo: '/search' }
+  { path: '**', redirectTo: '/search' },
 ];
 
 @NgModule({
   imports: [RouterModule.forRoot(routes)],
-  exports: [RouterModule]
+  exports: [RouterModule],
 })
-export class AppRoutingModule { }
+export class AppRoutingModule {}
