@@ -1,42 +1,79 @@
 <div class="results-table-container">
-  <div *ngIf="loading" class="loading-overlay">
-    <p>Loading results...</p>
-  </div>
+  <p-table 
+    #dt
+    [value]="vehicles" 
+    [loading]="loading"
+    [paginator]="true" 
+    [rows]="20" 
+    [rowsPerPageOptions]="[20, 50, 100]"
+    [showCurrentPageReport]="true"
+    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} aircraft"
+    [globalFilterFields]="['registration_id','manufacturer','model','category','location.state_province']"
+    styleClass="p-datatable-striped"
+    responsiveLayout="scroll"
+    dataKey="transport_id">
+    
+    <ng-template pTemplate="caption">
+      <div class="table-header">
+        <h5>{{vehicles.length}} aircraft found</h5>
+        <span class="p-input-icon-left">
+          <i class="pi pi-search"></i>
+          <input pInputText type="text" 
+                 (input)="dt.filterGlobal($any($event.target).value, 'contains')" 
+                 placeholder="Search all fields..." />
+        </span>
+      </div>
+    </ng-template>
 
-  <div *ngIf="!hasResults && !loading" class="no-results">
-    <p>No vehicles found matching your criteria.</p>
-    <p class="suggestion">Try adjusting your filters or reset to see all results.</p>
-  </div>
-
-  <table *ngIf="hasResults" class="results-table">
-    <thead>
+    <ng-template pTemplate="header">
       <tr>
-        <th>Registration</th>
-        <th>Manufacturer</th>
-        <th>Model</th>
-        <th>Year</th>
-        <th>Type</th>
-        <th>State</th>
+        <th pSortableColumn="registration_id">
+          Registration <p-sortIcon field="registration_id"></p-sortIcon>
+        </th>
+        <th pSortableColumn="manufacturer">
+          Manufacturer <p-sortIcon field="manufacturer"></p-sortIcon>
+        </th>
+        <th pSortableColumn="model">
+          Model <p-sortIcon field="model"></p-sortIcon>
+        </th>
+        <th pSortableColumn="year">
+          Year <p-sortIcon field="year"></p-sortIcon>
+        </th>
+        <th pSortableColumn="category">
+          Type <p-sortIcon field="category"></p-sortIcon>
+        </th>
+        <th pSortableColumn="location.state_province">
+          State <p-sortIcon field="location.state_province"></p-sortIcon>
+        </th>
         <th>Actions</th>
       </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let vehicle of vehicles">
-        <td class="registration">{{ vehicle.registration_id || 'N/A' }}</td>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-vehicle>
+      <tr>
+        <td>{{ vehicle.registration_id || 'N/A' }}</td>
         <td>{{ vehicle.manufacturer || 'Unknown' }}</td>
         <td>{{ vehicle.model || 'Unknown' }}</td>
-        <td class="year">{{ vehicle.year || 'N/A' }}</td>
-        <td class="type">{{ vehicle.category || 'N/A' }}</td>
+        <td>{{ vehicle.year || 'N/A' }}</td>
+        <td>{{ vehicle.category || 'N/A' }}</td>
         <td>{{ vehicle.location?.state_province || 'N/A' }}</td>
-        <td class="actions">
-          <button 
-            class="btn-link" 
-            (click)="onViewDetails(vehicle.transport_id)"
-          >
-            View Details
+        <td>
+          <button pButton type="button" 
+                  label="View Details" 
+                  class="p-button-sm p-button-text"
+                  (click)="onViewDetails(vehicle.transport_id)">
           </button>
         </td>
       </tr>
-    </tbody>
-  </table>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="7" class="no-results">
+          <p>No vehicles found matching your criteria.</p>
+          <p class="suggestion">Try adjusting your filters or reset to see all results.</p>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
 </div>
