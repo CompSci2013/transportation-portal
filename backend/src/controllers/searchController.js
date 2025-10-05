@@ -20,7 +20,6 @@ exports.searchAircraft = async (req, res) => {
       sortOrder = 'desc',
     } = req.query;
 
-
     // Build Elasticsearch query
     const must = [];
 
@@ -85,7 +84,7 @@ exports.searchAircraft = async (req, res) => {
 
     const getSortField = (field) => {
       const fieldMap = {
-        registration_id: 'registration_id.keyword',
+        registration_id: 'registration_id',
         manufacturer: 'manufacturer.keyword',
         model: 'model.keyword',
         year: 'year',
@@ -141,7 +140,6 @@ exports.searchAircraft = async (req, res) => {
         },
       },
     };
-
 
     const result = await esClient.search({
       index: process.env.ELASTICSEARCH_INDEX,
