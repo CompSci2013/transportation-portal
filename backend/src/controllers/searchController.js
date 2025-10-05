@@ -1,6 +1,6 @@
 const { Client } = require('@elastic/elasticsearch');
 const esClient = new Client({
-  node: process.env.ELASTICSEARCH_NODE
+  node: process.env.ELASTICSEARCH_NODE,
 });
 
 // Search aircraft with filters and statistics
@@ -15,24 +15,31 @@ exports.searchAircraft = async (req, res) => {
       state = '',
       page = 1,
       size = 20,
-      manufacturer_state_combos = ''
+      manufacturer_state_combos = '',
+      sort = 'year',
+      sortOrder = 'desc',
     } = req.query;
+
 
     // Build Elasticsearch query
     const must = [];
-    
+
     if (query) {
       must.push({
         multi_match: {
           query: query,
-          fields: ['manufacturer', 'model', 'registration_id', 'plane_data.n_number']
-        }
+          fields: [
+            'manufacturer',
+            'model',
+            'registration_id',
+            'plane_data.n_number',
+          ],
+        },
       });
     }
 
-    // Handle manufacturer-state combinations (takes precedence over individual fields)
     if (manufacturer_state_combos) {
-      const combos = manufacturer_state_combos.split(',').map(combo => {
+      const combos = manufacturer_state_combos.split(',').map((combo) => {
         const [mfr, st] = combo.split(':');
         return { manufacturer: mfr.trim(), state: st.trim() };
       });
@@ -40,20 +47,19 @@ exports.searchAircraft = async (req, res) => {
       if (combos.length > 0) {
         must.push({
           bool: {
-            should: combos.map(combo => ({
+            should: combos.map((combo) => ({
               bool: {
                 must: [
                   { term: { 'manufacturer.keyword': combo.manufacturer } },
-                  { term: { 'location.state_province': combo.state } }
-                ]
-              }
+                  { term: { 'location.state_province': combo.state } },
+                ],
+              },
             })),
-            minimum_should_match: 1
-          }
+            minimum_should_match: 1,
+          },
         });
       }
     } else {
-      // Fallback to individual manufacturer/state (for backward compatibility)
       if (manufacturer) {
         must.push({ term: { 'manufacturer.keyword': manufacturer } });
       }
@@ -77,102 +83,114 @@ exports.searchAircraft = async (req, res) => {
     const finalQuery = must.length > 0 ? { bool: { must } } : { match_all: {} };
     const from = (parseInt(page) - 1) * parseInt(size);
 
-    // Enhanced search body with aggregations
+    const getSortField = (field) => {
+      const fieldMap = {
+        registration_id: 'registration_id.keyword',
+        manufacturer: 'manufacturer.keyword',
+        model: 'model.keyword',
+        year: 'year',
+        category: 'category',
+        'location.state_province': 'location.state_province',
+      };
+      return fieldMap[field] || 'year';
+    };
+
+    const sortField = getSortField(sort);
+    const sortDirection = sortOrder === 'asc' ? 'asc' : 'desc';
+
     const searchBody = {
       query: finalQuery,
       from: from,
       size: parseInt(size),
-      sort: [{ year: 'desc' }],
-      
+      sort: [{ [sortField]: sortDirection }],
       aggs: {
         by_manufacturer: {
           terms: {
             field: 'manufacturer.keyword',
             size: 100,
-            order: { _count: 'desc' }
+            order: { _count: 'desc' },
           },
           aggs: {
             models: {
               terms: {
                 field: 'model.keyword',
-                size: 100
-              }
-            }
-          }
+                size: 100,
+              },
+            },
+          },
         },
         by_state: {
           terms: {
             field: 'location.state_province',
-            size: 50
-          }
+            size: 50,
+          },
         },
         by_year: {
           histogram: {
             field: 'year',
             interval: 1,
             min_doc_count: 1,
-            order: { _key: 'desc' }
-          }
+            order: { _key: 'desc' },
+          },
         },
         by_category: {
           terms: {
             field: 'category',
-            size: 20
-          }
-        }
-      }
+            size: 20,
+          },
+        },
+      },
     };
+
 
     const result = await esClient.search({
       index: process.env.ELASTICSEARCH_INDEX,
-      body: searchBody
+      body: searchBody,
     });
 
-    // Transform aggregations into statistics format
     const statistics = {
       byManufacturer: {},
       modelsByManufacturer: {},
-      totalCount: result.hits.total.value
+      totalCount: result.hits.total.value,
     };
 
     if (result.aggregations.by_manufacturer) {
-      result.aggregations.by_manufacturer.buckets.forEach(bucket => {
+      result.aggregations.by_manufacturer.buckets.forEach((bucket) => {
         const manufacturerName = bucket.key;
         statistics.byManufacturer[manufacturerName] = bucket.doc_count;
         statistics.modelsByManufacturer[manufacturerName] = {};
-        
+
         if (bucket.models && bucket.models.buckets) {
-          bucket.models.buckets.forEach(modelBucket => {
-            statistics.modelsByManufacturer[manufacturerName][modelBucket.key] = modelBucket.doc_count;
+          bucket.models.buckets.forEach((modelBucket) => {
+            statistics.modelsByManufacturer[manufacturerName][modelBucket.key] =
+              modelBucket.doc_count;
           });
         }
       });
     }
 
     res.json({
-      items: result.hits.hits.map(hit => ({
+      items: result.hits.hits.map((hit) => ({
         id: hit._id,
-        ...hit._source
+        ...hit._source,
       })),
       total: result.hits.total.value,
       page: parseInt(page),
       size: parseInt(size),
-      statistics: statistics
+      statistics: statistics,
     });
-
   } catch (error) {
     console.error('Search error:', error);
     res.status(500).json({ error: error.message });
   }
 };
 
-// Get single aircraft by ID
 exports.getAircraftById = async (req, res) => {
   try {
     const { id } = req.params;
     const result = await esClient.get({
       index: process.env.ELASTICSEARCH_INDEX,
-      id: id
+      id: id,
     });
     res.json(result._source);
   } catch (error) {
@@ -183,60 +201,55 @@ exports.getAircraftById = async (req, res) => {
   }
 };
 
-/**
- * Get unique manufacturer-state combinations with counts
- * Supports pagination and search filtering
- */
 exports.getManufacturerStateCombinations = async (req, res) => {
   try {
     const { page = 1, size = 20, search = '' } = req.query;
     const from = (page - 1) * size;
 
-    // Aggregation query for unique manufacturer + state combinations
     const response = await esClient.search({
       index: process.env.ELASTICSEARCH_INDEX,
       size: 0,
       body: {
-        query: search ? {
-          wildcard: {
-            manufacturer: {
-              value: `*${search}*`,
-              case_insensitive: true
+        query: search
+          ? {
+              wildcard: {
+                manufacturer: {
+                  value: `*${search}*`,
+                  case_insensitive: true,
+                },
+              },
             }
-          }
-        } : { match_all: {} },
+          : { match_all: {} },
         aggs: {
           manufacturers: {
             terms: {
               field: 'manufacturer.keyword',
-              size: 1000
+              size: 1000,
             },
             aggs: {
               states: {
                 terms: {
                   field: 'location.state_province',
-                  size: 100
-                }
-              }
-            }
-          }
-        }
-      }
+                  size: 100,
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
-    // Flatten to manufacturer-state pairs
     const pairs = [];
-    response.aggregations.manufacturers.buckets.forEach(mfrBucket => {
-      mfrBucket.states.buckets.forEach(stateBucket => {
+    response.aggregations.manufacturers.buckets.forEach((mfrBucket) => {
+      mfrBucket.states.buckets.forEach((stateBucket) => {
         pairs.push({
           manufacturer: mfrBucket.key,
           state: stateBucket.key,
-          count: stateBucket.doc_count
+          count: stateBucket.doc_count,
         });
       });
     });
 
-    // Apply pagination
     const total = pairs.length;
     const paginatedPairs = pairs.slice(from, from + parseInt(size));
 
@@ -244,9 +257,8 @@ exports.getManufacturerStateCombinations = async (req, res) => {
       total,
       page: parseInt(page),
       size: parseInt(size),
-      items: paginatedPairs
+      items: paginatedPairs,
     });
-
   } catch (error) {
     console.error('Error fetching manufacturer-state combinations:', error);
     res.status(500).json({ error: 'Failed to fetch combinations' });
