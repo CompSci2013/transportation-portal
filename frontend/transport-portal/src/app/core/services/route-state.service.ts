@@ -114,6 +114,19 @@ export class RouteStateService {
     if (filters.sort) params['sort'] = filters.sort;
     if (filters.sortOrder) params['sortOrder'] = filters.sortOrder;
 
+    // Column filters
+    if (filters.filterRegistration) params['fReg'] = filters.filterRegistration;
+    if (filters.filterManufacturer) params['fMfr'] = filters.filterManufacturer;
+    if (filters.filterModel) params['fModel'] = filters.filterModel;
+    if (filters.filterYearMin !== undefined && filters.filterYearMin !== null) {
+      params['fYearMin'] = String(filters.filterYearMin);
+    }
+    if (filters.filterYearMax !== undefined && filters.filterYearMax !== null) {
+      params['fYearMax'] = String(filters.filterYearMax);
+    }
+    if (filters.filterCategory) params['fCat'] = filters.filterCategory;
+    if (filters.filterState) params['fState'] = filters.filterState;
+
     return params;
   }
 
@@ -147,6 +160,17 @@ export class RouteStateService {
     if (params['sort']) filters.sort = params['sort'];
     if (params['sortOrder'])
       filters.sortOrder = params['sortOrder'] as 'asc' | 'desc';
+
+    // Column filters
+    if (params['fReg']) filters.filterRegistration = params['fReg'];
+    if (params['fMfr']) filters.filterManufacturer = params['fMfr'];
+    if (params['fModel']) filters.filterModel = params['fModel'];
+    if (params['fYearMin'])
+      filters.filterYearMin = parseInt(params['fYearMin'], 10);
+    if (params['fYearMax'])
+      filters.filterYearMax = parseInt(params['fYearMax'], 10);
+    if (params['fCat']) filters.filterCategory = params['fCat'];
+    if (params['fState']) filters.filterState = params['fState'];
 
     return filters;
   }

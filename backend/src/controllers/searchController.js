@@ -18,6 +18,14 @@ exports.searchAircraft = async (req, res) => {
       manufacturer_state_combos = '',
       sort = 'year',
       sortOrder = 'desc',
+      // Column filters
+      filter_registration = '',
+      filter_manufacturer = '',
+      filter_model = '',
+      filter_year_min,
+      filter_year_max,
+      filter_category = '',
+      filter_state = '',
     } = req.query;
 
     // Build Elasticsearch query
@@ -77,6 +85,69 @@ exports.searchAircraft = async (req, res) => {
       if (year_min) range.year.gte = parseInt(year_min);
       if (year_max) range.year.lte = parseInt(year_max);
       must.push({ range });
+    }
+
+    // Column filters
+    if (filter_registration) {
+      must.push({
+        wildcard: {
+          registration_id: {
+            value: `*${filter_registration}*`,
+            case_insensitive: true,
+          },
+        },
+      });
+    }
+
+    if (filter_manufacturer) {
+      must.push({
+        wildcard: {
+          'manufacturer.keyword': {
+            value: `*${filter_manufacturer}*`,
+            case_insensitive: true,
+          },
+        },
+      });
+    }
+
+    if (filter_model) {
+      must.push({
+        wildcard: {
+          'model.keyword': {
+            value: `*${filter_model}*`,
+            case_insensitive: true,
+          },
+        },
+      });
+    }
+
+    if (filter_year_min || filter_year_max) {
+      const range = { year: {} };
+      if (filter_year_min) range.year.gte = parseInt(filter_year_min);
+      if (filter_year_max) range.year.lte = parseInt(filter_year_max);
+      must.push({ range });
+    }
+
+    if (filter_category) {
+      must.push({
+        wildcard: {
+          category: {
+            value: `*${filter_category}*`,
+            case_insensitive: true,
+          },
+        },
+      });
+    }
+
+    if (filter_state) {
+      must.push({
+        wildcard: {
+          'location.state_province': {
+            value: `*${filter_state}*`,
+            case_insensitive: true,
+          },
+        },
+      });
     }
 
     const finalQuery = must.length > 0 ? { bool: { must } } : { match_all: {} };

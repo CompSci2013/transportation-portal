@@ -66,6 +66,29 @@ export class ApiService {
       params = params.set('sortOrder', filters.sortOrder);
     }
 
+    // Column filters
+    if (filters.filterRegistration) {
+      params = params.set('filter_registration', filters.filterRegistration);
+    }
+    if (filters.filterManufacturer) {
+      params = params.set('filter_manufacturer', filters.filterManufacturer);
+    }
+    if (filters.filterModel) {
+      params = params.set('filter_model', filters.filterModel);
+    }
+    if (filters.filterYearMin !== undefined && filters.filterYearMin !== null) {
+      params = params.set('filter_year_min', filters.filterYearMin.toString());
+    }
+    if (filters.filterYearMax !== undefined && filters.filterYearMax !== null) {
+      params = params.set('filter_year_max', filters.filterYearMax.toString());
+    }
+    if (filters.filterCategory) {
+      params = params.set('filter_category', filters.filterCategory);
+    }
+    if (filters.filterState) {
+      params = params.set('filter_state', filters.filterState);
+    }
+
     return this.http.get<SearchResponse>(`${this.apiUrl}/aircraft`, { params });
   }
 

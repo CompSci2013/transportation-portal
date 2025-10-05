@@ -3,8 +3,6 @@
     #dt
     [value]="vehicles"
     [loading]="loading"
-    [lazy]="true"
-    (onLazyLoad)="onLazyLoad($event)"
     styleClass="p-datatable-striped"
     responsiveLayout="scroll"
     dataKey="transport_id"
@@ -12,39 +10,109 @@
     <ng-template pTemplate="caption">
       <div class="table-header">
         <h5>{{ totalRecords }} aircraft found</h5>
-        <span class="p-input-icon-left">
-          <i class="pi pi-search"></i>
-          <input
-            pInputText
-            type="text"
-            (input)="dt.filterGlobal($any($event.target).value, 'contains')"
-            placeholder="Search all fields..."
-          />
-        </span>
       </div>
     </ng-template>
 
     <ng-template pTemplate="header">
       <tr>
-        <th pSortableColumn="registration_id">
+        <th
+          pSortableColumn="registration_id"
+          (click)="onSort('registration_id')"
+        >
           Registration <p-sortIcon field="registration_id"></p-sortIcon>
         </th>
-        <th pSortableColumn="manufacturer">
+        <th pSortableColumn="manufacturer" (click)="onSort('manufacturer')">
           Manufacturer <p-sortIcon field="manufacturer"></p-sortIcon>
         </th>
-        <th pSortableColumn="model">
+        <th pSortableColumn="model" (click)="onSort('model')">
           Model <p-sortIcon field="model"></p-sortIcon>
         </th>
-        <th pSortableColumn="year">
+        <th pSortableColumn="year" (click)="onSort('year')">
           Year <p-sortIcon field="year"></p-sortIcon>
         </th>
-        <th pSortableColumn="category">
+        <th pSortableColumn="category" (click)="onSort('category')">
           Type <p-sortIcon field="category"></p-sortIcon>
         </th>
-        <th pSortableColumn="location.state_province">
+        <th
+          pSortableColumn="location.state_province"
+          (click)="onSort('location.state_province')"
+        >
           State <p-sortIcon field="location.state_province"></p-sortIcon>
         </th>
         <th>Actions</th>
+      </tr>
+      <tr class="filter-row">
+        <th>
+          <input
+            pInputText
+            type="text"
+            placeholder="Filter..."
+            [value]="filterRegistration"
+            (input)="onFilterChange('registration', $any($event.target).value)"
+            class="filter-input"
+          />
+        </th>
+        <th>
+          <input
+            pInputText
+            type="text"
+            placeholder="Filter..."
+            [value]="filterManufacturer"
+            (input)="onFilterChange('manufacturer', $any($event.target).value)"
+            class="filter-input"
+          />
+        </th>
+        <th>
+          <input
+            pInputText
+            type="text"
+            placeholder="Filter..."
+            [value]="filterModel"
+            (input)="onFilterChange('model', $any($event.target).value)"
+            class="filter-input"
+          />
+        </th>
+        <th>
+          <div class="year-filter">
+            <input
+              pInputText
+              type="number"
+              placeholder="Min"
+              [value]="filterYearMin || ''"
+              (input)="onFilterChange('yearMin', $any($event.target).value)"
+              class="filter-input filter-input-small"
+            />
+            <input
+              pInputText
+              type="number"
+              placeholder="Max"
+              [value]="filterYearMax || ''"
+              (input)="onFilterChange('yearMax', $any($event.target).value)"
+              class="filter-input filter-input-small"
+            />
+          </div>
+        </th>
+        <th>
+          <input
+            pInputText
+            type="text"
+            placeholder="Filter..."
+            [value]="filterCategory"
+            (input)="onFilterChange('category', $any($event.target).value)"
+            class="filter-input"
+          />
+        </th>
+        <th>
+          <input
+            pInputText
+            type="text"
+            placeholder="Filter..."
+            [value]="filterState"
+            (input)="onFilterChange('state', $any($event.target).value)"
+            class="filter-input"
+          />
+        </th>
+        <th></th>
       </tr>
     </ng-template>
 

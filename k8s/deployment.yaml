@@ -19,7 +19,7 @@ spec:
         kubernetes.io/hostname: thor
       containers:
         - name: api
-          image: localhost/transport-api:v1.0.3
+          image: localhost/transport-api:v1.0.4
           imagePullPolicy: Never
           ports:
             - containerPort: 3000

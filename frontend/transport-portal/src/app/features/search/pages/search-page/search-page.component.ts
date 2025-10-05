@@ -27,19 +27,12 @@ export class SearchPageComponent implements OnInit, OnDestroy {
   private subscription?: Subscription;
 
   state: SearchState | null = null;
-  pickerClearTrigger: number = 0; // Increment to clear picker
+  pickerClearTrigger: number = 0;
 
   constructor(private stateService: StateManagementService) {}
 
   ngOnInit(): void {
     this.subscription = this.state$.subscribe((state) => {
-      console.log(
-        'State updated, loading:',
-        state.loading,
-        'results count:',
-        state.results.length
-      );
-      console.log('Scroll position during state update:', window.pageYOffset);
       this.state = state;
     });
   }
@@ -49,11 +42,8 @@ export class SearchPageComponent implements OnInit, OnDestroy {
   }
 
   onSearch(filters: SearchFilters): void {
-    // Clear manufacturerStateCombos when form searches
     filters.manufacturerStateCombos = undefined;
     this.stateService.updateFilters(filters);
-
-    // Clear picker visually
     this.pickerClearTrigger++;
   }
 
@@ -79,6 +69,45 @@ export class SearchPageComponent implements OnInit, OnDestroy {
 
   onSortChange(event: { field: string; order: 'asc' | 'desc' }): void {
     this.stateService.updateSort(event.field, event.order);
+  }
+
+  onFilterChange(event: {
+    field: string;
+    value: string | number | null;
+  }): void {
+    const currentFilters = this.state?.filters || {};
+    const updates: Partial<SearchFilters> = {};
+
+    // Map field names to filter properties
+    switch (event.field) {
+      case 'registration':
+        updates.filterRegistration = (event.value as string) || undefined;
+        break;
+      case 'manufacturer':
+        updates.filterManufacturer = (event.value as string) || undefined;
+        break;
+      case 'model':
+        updates.filterModel = (event.value as string) || undefined;
+        break;
+      case 'yearMin':
+        updates.filterYearMin = (event.value as number) || undefined;
+        break;
+      case 'yearMax':
+        updates.filterYearMax = (event.value as number) || undefined;
+        break;
+      case 'category':
+        updates.filterCategory = (event.value as string) || undefined;
+        break;
+      case 'state':
+        updates.filterState = (event.value as string) || undefined;
+        break;
+    }
+
+    this.stateService.updateFilters({
+      ...currentFilters,
+      ...updates,
+      page: 1, // Reset to page 1 when filtering
+    });
   }
 
   onManufacturerBarClick(manufacturer: string): void {

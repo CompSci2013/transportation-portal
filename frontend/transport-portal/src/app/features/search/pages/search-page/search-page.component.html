@@ -47,8 +47,16 @@
       [vehicles]="vehicles"
       [loading]="loading"
       [totalRecords]="totalRecords"
+      [filterRegistration]="currentFilters.filterRegistration || ''"
+      [filterManufacturer]="currentFilters.filterManufacturer || ''"
+      [filterModel]="currentFilters.filterModel || ''"
+      [filterYearMin]="currentFilters.filterYearMin || null"
+      [filterYearMax]="currentFilters.filterYearMax || null"
+      [filterCategory]="currentFilters.filterCategory || ''"
+      [filterState]="currentFilters.filterState || ''"
       (viewDetails)="onViewDetails($event)"
       (sortChange)="onSortChange($event)"
+      (filterChange)="onFilterChange($event)"
     ></app-results-table>
 
     <!-- Pagination -->
