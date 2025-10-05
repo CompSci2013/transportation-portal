@@ -3,11 +3,17 @@ import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { HttpClientModule } from '@angular/common/http';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { TableModule } from 'primeng/table';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { DropdownModule } from 'primeng/dropdown';
-import { MultiSelectModule } from 'primeng/multiselect';
+
+// NG-ZORRO imports
+import { NzTableModule } from 'ng-zorro-antd/table';
+import { NzButtonModule } from 'ng-zorro-antd/button';
+import { NzInputModule } from 'ng-zorro-antd/input';
+import { NzSelectModule } from 'ng-zorro-antd/select';
+import { NzIconModule } from 'ng-zorro-antd/icon';
+import { registerLocaleData } from '@angular/common';
+import en from '@angular/common/locales/en';
+import { NZ_I18N, en_US } from 'ng-zorro-antd/i18n';
+
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 
@@ -51,13 +57,14 @@ import { FilterPickerComponent } from './shared/components/filter-picker/filter-
     HttpClientModule,
     FormsModule,
     ReactiveFormsModule,
-    TableModule,
-    ButtonModule,
-    InputTextModule,
-    DropdownModule,
-    MultiSelectModule,
+    // NG-ZORRO modules
+    NzTableModule,
+    NzButtonModule,
+    NzInputModule,
+    NzSelectModule,
+    NzIconModule,
   ],
-  providers: [],
+  providers: [{ provide: NZ_I18N, useValue: en_US }],
   bootstrap: [AppComponent],
 })
 export class AppModule {}

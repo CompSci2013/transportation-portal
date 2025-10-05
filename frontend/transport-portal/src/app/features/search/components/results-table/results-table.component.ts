@@ -1,19 +1,27 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { TransportVehicle } from '../../../../models';
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  OnInit,
+  OnDestroy,
+} from '@angular/core';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { TransportVehicle } from '../../../../models/transport-vehicle.model';
 
 @Component({
   selector: 'app-results-table',
   templateUrl: './results-table.component.html',
   styleUrls: ['./results-table.component.scss'],
 })
-export class ResultsTableComponent {
+export class ResultsTableComponent implements OnInit, OnDestroy {
   @Input() vehicles: TransportVehicle[] = [];
-  @Input() loading: boolean = false;
   @Input() totalRecords: number = 0;
+  @Input() loading: boolean = false;
+  @Input() currentPage: number = 1;
+  @Input() pageSize: number = 20;
 
-  // Filter inputs from parent
   @Input() filterRegistration: string = '';
   @Input() filterManufacturer: string = '';
   @Input() filterModel: string = '';
@@ -27,65 +35,54 @@ export class ResultsTableComponent {
     field: string;
     order: 'asc' | 'desc';
   }>();
-  @Output() filterChange = new EventEmitter<{
-    field: string;
-    value: string | number | null;
-  }>();
+  @Output() pageChange = new EventEmitter<number>();
+  @Output() pageSizeChange = new EventEmitter<number>();
+  @Output() filterChange = new EventEmitter<{ field: string; value: string }>();
 
-  private currentSortField: string = '';
-  private currentSortOrder: 'asc' | 'desc' = 'asc';
   private filterSubject = new Subject<{ field: string; value: string }>();
+  private destroy$ = new Subject<void>();
 
-  constructor() {
-    // Debounce filter changes to avoid excessive API calls
+  ngOnInit() {
     this.filterSubject
       .pipe(
         debounceTime(500),
         distinctUntilChanged(
-          (a, b) => a.field === b.field && a.value === b.value
+          (prev, curr) => prev.field === curr.field && prev.value === curr.value
         )
       )
       .subscribe(({ field, value }) => {
-        this.emitFilter(field, value);
+        this.filterChange.emit({ field, value });
       });
   }
 
-  onViewDetails(transportId: string): void {
-    this.viewDetails.emit(transportId);
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
-  onSort(field: string): void {
-    if (this.currentSortField === field) {
-      this.currentSortOrder = this.currentSortOrder === 'asc' ? 'desc' : 'asc';
-    } else {
-      this.currentSortField = field;
-      this.currentSortOrder = 'asc';
+  onSort(field: string, order: string | null) {
+    if (!order) {
+      // When sort is cleared, don't emit - just return
+      return;
     }
-
-    this.sortChange.emit({
-      field: this.currentSortField,
-      order: this.currentSortOrder,
-    });
+    const sortOrder: 'asc' | 'desc' = order === 'ascend' ? 'asc' : 'desc';
+    this.sortChange.emit({ field, order: sortOrder });
   }
 
-  onFilterChange(field: string, value: string): void {
+  onPageChange(page: number) {
+    console.log('NG-ZORRO page change:', page);
+    this.pageChange.emit(page);
+  }
+
+  onPageSizeChange(size: number) {
+    this.pageSizeChange.emit(size);
+  }
+
+  onFilterChange(field: string, value: string) {
     this.filterSubject.next({ field, value });
   }
 
-  private emitFilter(field: string, value: string): void {
-    // Convert to appropriate type and emit
-    let filterValue: string | number | null = value.trim();
-
-    if (field === 'yearMin' || field === 'yearMax') {
-      filterValue = value ? parseInt(value, 10) : null;
-    } else if (filterValue === '') {
-      filterValue = null;
-    }
-
-    this.filterChange.emit({ field, value: filterValue });
-  }
-
-  get hasResults(): boolean {
-    return this.vehicles.length > 0;
+  onViewDetails(transportId: string) {
+    this.viewDetails.emit(transportId);
   }
 }

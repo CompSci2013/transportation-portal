@@ -1,70 +1,51 @@
 <div class="results-table-container">
-  <nz-table
-    #basicTable
-    [nzData]="vehicles"
-    [nzLoading]="loading"
-    [nzPageSize]="pageSize"
-    [nzPageIndex]="currentPage"
-    [nzTotal]="totalRecords"
-    [nzShowTotal]="totalTemplate"
-    [nzFrontPagination]="false"
-    [nzShowSizeChanger]="true"
-    [nzPageSizeOptions]="[20, 50, 100]"
-    (nzPageIndexChange)="onPageChange($event)"
-    (nzPageSizeChange)="onPageSizeChange($event)"
-    nzSize="small"
-    [nzScroll]="{ x: '1200px' }"
+  <p-table
+    #dt
+    [value]="vehicles"
+    [loading]="loading"
+    styleClass="p-datatable-striped"
+    responsiveLayout="scroll"
+    dataKey="transport_id"
   >
-    <thead>
+    <ng-template pTemplate="caption">
+      <div class="table-header">
+        <h5>{{ totalRecords }} aircraft found</h5>
+      </div>
+    </ng-template>
+
+    <ng-template pTemplate="header">
       <tr>
         <th
-          nzColumnKey="registration_id"
-          [nzSortFn]="true"
-          (nzSortOrderChange)="onSort('registration_id', $event)"
+          pSortableColumn="registration_id"
+          (click)="onSort('registration_id')"
         >
-          Registration
+          Registration <p-sortIcon field="registration_id"></p-sortIcon>
+        </th>
+        <th pSortableColumn="manufacturer" (click)="onSort('manufacturer')">
+          Manufacturer <p-sortIcon field="manufacturer"></p-sortIcon>
+        </th>
+        <th pSortableColumn="model" (click)="onSort('model')">
+          Model <p-sortIcon field="model"></p-sortIcon>
+        </th>
+        <th pSortableColumn="year" (click)="onSort('year')">
+          Year <p-sortIcon field="year"></p-sortIcon>
+        </th>
+        <th pSortableColumn="category" (click)="onSort('category')">
+          Type <p-sortIcon field="category"></p-sortIcon>
         </th>
         <th
-          nzColumnKey="manufacturer"
-          [nzSortFn]="true"
-          (nzSortOrderChange)="onSort('manufacturer', $event)"
+          pSortableColumn="location.state_province"
+          (click)="onSort('location.state_province')"
         >
-          Manufacturer
-        </th>
-        <th
-          nzColumnKey="model"
-          [nzSortFn]="true"
-          (nzSortOrderChange)="onSort('model', $event)"
-        >
-          Model
-        </th>
-        <th
-          nzColumnKey="year"
-          [nzSortFn]="true"
-          (nzSortOrderChange)="onSort('year', $event)"
-        >
-          Year
-        </th>
-        <th
-          nzColumnKey="category"
-          [nzSortFn]="true"
-          (nzSortOrderChange)="onSort('category', $event)"
-        >
-          Type
-        </th>
-        <th
-          nzColumnKey="location.state_province"
-          [nzSortFn]="true"
-          (nzSortOrderChange)="onSort('location.state_province', $event)"
-        >
-          State
+          State <p-sortIcon field="location.state_province"></p-sortIcon>
         </th>
         <th>Actions</th>
       </tr>
       <tr class="filter-row">
         <th>
           <input
-            nz-input
+            pInputText
+            type="text"
             placeholder="Filter..."
             [value]="filterRegistration"
             (input)="onFilterChange('registration', $any($event.target).value)"
@@ -73,7 +54,8 @@
         </th>
         <th>
           <input
-            nz-input
+            pInputText
+            type="text"
             placeholder="Filter..."
             [value]="filterManufacturer"
             (input)="onFilterChange('manufacturer', $any($event.target).value)"
@@ -82,7 +64,8 @@
         </th>
         <th>
           <input
-            nz-input
+            pInputText
+            type="text"
             placeholder="Filter..."
             [value]="filterModel"
             (input)="onFilterChange('model', $any($event.target).value)"
@@ -92,7 +75,7 @@
         <th>
           <div class="year-filter">
             <input
-              nz-input
+              pInputText
               type="number"
               placeholder="Min"
               [value]="filterYearMin || ''"
@@ -100,7 +83,7 @@
               class="filter-input filter-input-small"
             />
             <input
-              nz-input
+              pInputText
               type="number"
               placeholder="Max"
               [value]="filterYearMax || ''"
@@ -111,7 +94,8 @@
         </th>
         <th>
           <input
-            nz-input
+            pInputText
+            type="text"
             placeholder="Filter..."
             [value]="filterCategory"
             (input)="onFilterChange('category', $any($event.target).value)"
@@ -120,7 +104,8 @@
         </th>
         <th>
           <input
-            nz-input
+            pInputText
+            type="text"
             placeholder="Filter..."
             [value]="filterState"
             (input)="onFilterChange('state', $any($event.target).value)"
@@ -129,10 +114,10 @@
         </th>
         <th></th>
       </tr>
-    </thead>
+    </ng-template>
 
-    <tbody>
-      <tr *ngFor="let vehicle of basicTable.data">
+    <ng-template pTemplate="body" let-vehicle>
+      <tr>
         <td>{{ vehicle.registration_id || "N/A" }}</td>
         <td>{{ vehicle.manufacturer || "Unknown" }}</td>
         <td>{{ vehicle.model || "Unknown" }}</td>
@@ -141,26 +126,25 @@
         <td>{{ vehicle.location?.state_province || "N/A" }}</td>
         <td>
           <button
-            nz-button
-            nzType="link"
-            nzSize="small"
+            pButton
+            type="button"
+            label="View Details"
+            class="p-button-sm p-button-text"
             (click)="onViewDetails(vehicle.transport_id)"
-          >
-            View Details
-          </button>
+          ></button>
         </td>
       </tr>
-    </tbody>
-  </nz-table>
+    </ng-template>
 
-  <ng-template #totalTemplate let-total>
-    <strong>{{ total }}</strong> aircraft found
-  </ng-template>
-
-  <div *ngIf="vehicles.length === 0 && !loading" class="no-results">
-    <p>No vehicles found matching your criteria.</p>
-    <p class="suggestion">
-      Try adjusting your filters or reset to see all results.
-    </p>
-  </div>
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="7" class="no-results">
+          <p>No vehicles found matching your criteria.</p>
+          <p class="suggestion">
+            Try adjusting your filters or reset to see all results.
+          </p>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
 </div>

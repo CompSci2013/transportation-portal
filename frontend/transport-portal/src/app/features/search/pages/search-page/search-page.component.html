@@ -47,6 +47,8 @@
       [vehicles]="vehicles"
       [loading]="loading"
       [totalRecords]="totalRecords"
+      [currentPage]="currentPage"
+      [pageSize]="pageSize"
       [filterRegistration]="currentFilters.filterRegistration || ''"
       [filterManufacturer]="currentFilters.filterManufacturer || ''"
       [filterModel]="currentFilters.filterModel || ''"
@@ -56,16 +58,10 @@
       [filterState]="currentFilters.filterState || ''"
       (viewDetails)="onViewDetails($event)"
       (sortChange)="onSortChange($event)"
+      (pageChange)="onPageChange($event)"
+      (pageSizeChange)="onPageSizeChange($event)"
       (filterChange)="onFilterChange($event)"
     ></app-results-table>
-
-    <!-- Pagination -->
-    <app-pagination
-      [currentPage]="currentPage"
-      [pageSize]="pageSize"
-      [totalResults]="totalRecords"
-      (pageChange)="onPageChange($event)"
-    ></app-pagination>
 
     <!-- Statistics/Histograms -->
     <div *ngIf="state?.statistics" class="statistics-section">

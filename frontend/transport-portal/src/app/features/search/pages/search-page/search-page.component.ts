@@ -67,6 +67,14 @@ export class SearchPageComponent implements OnInit, OnDestroy {
     this.stateService.updatePage(page);
   }
 
+  onPageSizeChange(size: number): void {
+    this.stateService.updateFilters({
+      ...this.state?.filters,
+      size: size,
+      page: 1, // Reset to page 1 when changing page size
+    });
+  }
+
   onSortChange(event: { field: string; order: 'asc' | 'desc' }): void {
     this.stateService.updateSort(event.field, event.order);
   }

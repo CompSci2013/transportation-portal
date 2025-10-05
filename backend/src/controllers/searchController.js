@@ -168,11 +168,27 @@ exports.searchAircraft = async (req, res) => {
     const sortField = getSortField(sort);
     const sortDirection = sortOrder === 'asc' ? 'asc' : 'desc';
 
+    // Handle nested field sorting
+    let sortConfig;
+    if (sortField === 'location.state_province') {
+      sortConfig = [
+        {
+          'location.state_province': {
+            order: sortDirection,
+            unmapped_type: 'keyword',
+            missing: sortDirection === 'asc' ? '_last' : '_first',
+          },
+        },
+      ];
+    } else {
+      sortConfig = [{ [sortField]: sortDirection }];
+    }
+
     const searchBody = {
       query: finalQuery,
       from: from,
       size: parseInt(size),
-      sort: [{ [sortField]: sortDirection }],
+      sort: sortConfig,
       aggs: {
         by_manufacturer: {
           terms: {
