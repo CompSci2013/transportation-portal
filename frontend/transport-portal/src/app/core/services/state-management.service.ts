@@ -165,8 +165,12 @@ export class StateManagementService implements OnDestroy {
     const newFilters = {
       ...currentFilters,
       ...filters,
-      page: 1, // Reset to page 1 on filter change
     };
+
+    // Only reset to page 1 if it's not explicitly being set
+    if (filters.page === undefined) {
+      newFilters.page = 1;
+    }
 
     this.updateState({ filters: newFilters });
     this.syncStateToUrl();
@@ -215,6 +219,20 @@ export class StateManagementService implements OnDestroy {
   updatePage(page: number): void {
     const currentFilters = this.stateSubject.value.filters;
     const newFilters = { ...currentFilters, page };
+
+    this.updateState({ filters: newFilters });
+    this.syncStateToUrl();
+    this.performSearch();
+  }
+
+  updateSort(sort: string, sortOrder: 'asc' | 'desc'): void {
+    const currentFilters = this.stateSubject.value.filters;
+    const newFilters = {
+      ...currentFilters,
+      sort,
+      sortOrder,
+      page: 1, // Reset to page 1 when sort changes
+    };
 
     this.updateState({ filters: newFilters });
     this.syncStateToUrl();

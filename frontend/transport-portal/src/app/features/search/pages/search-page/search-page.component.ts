@@ -77,6 +77,10 @@ export class SearchPageComponent implements OnInit, OnDestroy {
     this.stateService.updatePage(page);
   }
 
+  onSortChange(event: { field: string; order: 'asc' | 'desc' }): void {
+    this.stateService.updateSort(event.field, event.order);
+  }
+
   onManufacturerBarClick(manufacturer: string): void {
     this.stateService.selectManufacturer(manufacturer);
   }

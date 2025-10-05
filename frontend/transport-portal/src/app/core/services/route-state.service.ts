@@ -6,35 +6,32 @@ import { SearchFilters } from '../../models';
 
 /**
  * RouteStateService
- * 
+ *
  * Handles URL query parameter synchronization
  * Pure URL operations - no business logic or API calls
  */
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class RouteStateService {
   private queryParamsSubject = new BehaviorSubject<Params>({});
   public queryParams$ = this.queryParamsSubject.asObservable();
 
-  constructor(
-    private router: Router,
-    private route: ActivatedRoute
-  ) {
+  constructor(private router: Router, private route: ActivatedRoute) {
     this.initQueryParamsListener();
   }
 
   // ========== INITIALIZATION ==========
-  
+
   private initQueryParamsListener(): void {
     // Subscribe to route query params changes
-    this.route.queryParams.subscribe(params => {
+    this.route.queryParams.subscribe((params) => {
       this.queryParamsSubject.next(params);
     });
   }
 
   // ========== READ URL PARAMS ==========
-  
+
   getCurrentParams(): Params {
     return this.route.snapshot.queryParams;
   }
@@ -45,19 +42,19 @@ export class RouteStateService {
 
   watchParam(key: string): Observable<string | null> {
     return this.queryParams$.pipe(
-      map(params => params[key] || null),
+      map((params) => params[key] || null),
       distinctUntilChanged()
     );
   }
 
   // ========== WRITE URL PARAMS ==========
-  
+
   updateParams(params: Params, replaceUrl = false): void {
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: params,
       queryParamsHandling: 'merge',
-      replaceUrl: replaceUrl
+      replaceUrl: replaceUrl,
     });
   }
 
@@ -66,7 +63,7 @@ export class RouteStateService {
       relativeTo: this.route,
       queryParams: params,
       queryParamsHandling: '',
-      replaceUrl: replaceUrl
+      replaceUrl: replaceUrl,
     });
   }
 
@@ -81,21 +78,24 @@ export class RouteStateService {
   }
 
   // ========== CONVERSIONS ==========
-  
+
   filtersToParams(filters: SearchFilters): Params {
     const params: Params = {};
-    
+
     // Handle manufacturer-state combinations
-    if (filters.manufacturerStateCombos && filters.manufacturerStateCombos.length > 0) {
+    if (
+      filters.manufacturerStateCombos &&
+      filters.manufacturerStateCombos.length > 0
+    ) {
       params['combos'] = filters.manufacturerStateCombos
-        .map(c => `${c.manufacturer}:${c.state}`)
+        .map((c) => `${c.manufacturer}:${c.state}`)
         .join(',');
     } else {
       // Fallback to individual fields
       if (filters.manufacturer) params['manufacturer'] = filters.manufacturer;
       if (filters.state) params['state'] = filters.state;
     }
-    
+
     // Other filters
     if (filters.q) params['q'] = filters.q;
     if (filters.type) params['type'] = filters.type;
@@ -109,13 +109,17 @@ export class RouteStateService {
     if (filters.status) params['status'] = filters.status;
     if (filters.page) params['page'] = String(filters.page);
     if (filters.size) params['size'] = String(filters.size);
-    
+
+    // Sort parameters
+    if (filters.sort) params['sort'] = filters.sort;
+    if (filters.sortOrder) params['sortOrder'] = filters.sortOrder;
+
     return params;
   }
 
   paramsToFilters(params: Params): SearchFilters {
     const filters: SearchFilters = {};
-    
+
     // Handle manufacturer-state combinations from URL
     if (params['combos']) {
       const combosArray = params['combos'].split(',').map((combo: string) => {
@@ -128,7 +132,7 @@ export class RouteStateService {
       if (params['manufacturer']) filters.manufacturer = params['manufacturer'];
       if (params['state']) filters.state = params['state'];
     }
-    
+
     // Other filters
     if (params['q']) filters.q = params['q'];
     if (params['type']) filters.type = params['type'] as 'plane' | 'automobile';
@@ -138,7 +142,12 @@ export class RouteStateService {
     if (params['status']) filters.status = params['status'];
     if (params['page']) filters.page = parseInt(params['page'], 10);
     if (params['size']) filters.size = parseInt(params['size'], 10);
-    
+
+    // Sort parameters
+    if (params['sort']) filters.sort = params['sort'];
+    if (params['sortOrder'])
+      filters.sortOrder = params['sortOrder'] as 'asc' | 'desc';
+
     return filters;
   }
 }

@@ -3,6 +3,8 @@
     #dt
     [value]="vehicles"
     [loading]="loading"
+    [lazy]="true"
+    (onLazyLoad)="onLazyLoad($event)"
     styleClass="p-datatable-striped"
     responsiveLayout="scroll"
     dataKey="transport_id"

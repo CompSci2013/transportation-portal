@@ -5,12 +5,12 @@ import { environment } from '../../environments/environment';
 import { SearchFilters, SearchResponse, Aircraft } from '../models';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ApiService {
   private apiUrl = environment.apiUrl;
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
   /**
    * Search aircraft with filters
@@ -18,11 +18,14 @@ export class ApiService {
    */
   searchAircraft(filters: SearchFilters): Observable<SearchResponse> {
     let params = new HttpParams();
-    
+
     // Handle manufacturer-state combinations (takes precedence)
-    if (filters.manufacturerStateCombos && filters.manufacturerStateCombos.length > 0) {
+    if (
+      filters.manufacturerStateCombos &&
+      filters.manufacturerStateCombos.length > 0
+    ) {
       const combosString = filters.manufacturerStateCombos
-        .map(combo => `${combo.manufacturer}:${combo.state}`)
+        .map((combo) => `${combo.manufacturer}:${combo.state}`)
         .join(',');
       params = params.set('manufacturer_state_combos', combosString);
     } else {
@@ -34,7 +37,7 @@ export class ApiService {
         params = params.set('state', filters.state);
       }
     }
-    
+
     // Other parameters
     if (filters.q) {
       params = params.set('query', filters.q);
@@ -54,7 +57,15 @@ export class ApiService {
     if (filters.size) {
       params = params.set('size', filters.size.toString());
     }
-    
+
+    // Sort parameters
+    if (filters.sort) {
+      params = params.set('sort', filters.sort);
+    }
+    if (filters.sortOrder) {
+      params = params.set('sortOrder', filters.sortOrder);
+    }
+
     return this.http.get<SearchResponse>(`${this.apiUrl}/aircraft`, { params });
   }
 
@@ -84,11 +95,13 @@ export class ApiService {
     let params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString());
-    
+
     if (search) {
       params = params.set('search', search);
     }
-    
-    return this.http.get(`${this.apiUrl}/manufacturer-state-combinations`, { params });
+
+    return this.http.get(`${this.apiUrl}/manufacturer-state-combinations`, {
+      params,
+    });
   }
 }
