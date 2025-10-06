@@ -11,6 +11,15 @@ import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
+import { NzBadgeModule } from 'ng-zorro-antd/badge';
+import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
+
+// Icon imports - using more distinct icons
+import { IconDefinition } from '@ant-design/icons-angular';
+import { UnorderedListOutline, AppstoreOutline } from '@ant-design/icons-angular/icons';
+
+const icons: IconDefinition[] = [UnorderedListOutline, AppstoreOutline];
+
 import { registerLocaleData } from '@angular/common';
 import en from '@angular/common/locales/en';
 import { NZ_I18N, en_US } from 'ng-zorro-antd/i18n';
@@ -63,8 +72,10 @@ import { FilterPickerComponent } from './shared/components/filter-picker/filter-
     NzButtonModule,
     NzInputModule,
     NzSelectModule,
-    NzIconModule,
+    NzIconModule.forRoot(icons),
     NzCheckboxModule,
+    NzBadgeModule,
+    NzToolTipModule,
   ],
   providers: [{ provide: NZ_I18N, useValue: en_US }],
   bootstrap: [AppComponent],

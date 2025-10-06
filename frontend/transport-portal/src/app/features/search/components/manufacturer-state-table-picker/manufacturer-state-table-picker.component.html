@@ -48,8 +48,23 @@
     >
       <thead>
         <tr>
-          <th nzWidth="40px"></th>
-          <!-- Checkbox -->
+          <th nzWidth="40px">
+            <!-- Select All Checkbox -->
+            <label
+              nz-checkbox
+              [nzIndeterminate]="someVisibleSelected"
+              [nzChecked]="allVisibleSelected"
+              (nzCheckedChange)="
+                allVisibleSelected ? deselectAll() : selectAll()
+              "
+              title="{{
+                allVisibleSelected
+                  ? 'Deselect all visible'
+                  : 'Select all visible'
+              }}"
+            >
+            </label>
+          </th>
           <th>Manufacturer</th>
           <th nzWidth="100px">Count</th>
           <th nzWidth="40px"></th>
@@ -192,6 +207,8 @@
       class="btn btn-primary"
       (click)="onApply()"
       [disabled]="selectedChips.length === 0"
+      nz-tooltip
+      nzTooltipTitle="Applies {{ selectedChips.length }} manufacturer-state combination filters. The actual number of aircraft returned will depend on how many aircraft match these combinations."
     >
       Apply ({{ selectedChips.length }})
     </button>

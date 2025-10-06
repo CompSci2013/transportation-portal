@@ -1,12 +1,32 @@
 <div class="results-table-container">
+  <!-- View Mode Toggle -->
+  <div class="table-controls">
+    <div class="results-info">
+      <ng-container *ngTemplateOutlet="totalTemplate; context: { $implicit: totalRecords }"></ng-container>
+    </div>
+    <div class="view-toggle">
+      <button 
+        nz-button 
+        nzType="default" 
+        nzSize="small"
+        (click)="toggleViewMode()"
+        [nzLoading]="loading"
+      >
+        <i nz-icon [nzType]="viewMode === 'flat' ? 'unordered-list' : 'appstore'"></i>
+        {{ viewMode === 'flat' ? 'Grouped View' : 'Flat View' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- FLAT VIEW (Original Table) -->
   <nz-table
+    *ngIf="viewMode === 'flat'"
     #basicTable
     [nzData]="vehicles"
     [nzLoading]="loading"
     [nzPageSize]="pageSize"
     [nzPageIndex]="currentPage"
     [nzTotal]="totalRecords"
-    [nzShowTotal]="totalTemplate"
     [nzFrontPagination]="false"
     [nzShowSizeChanger]="true"
     [nzPageSizeOptions]="[20, 50, 100]"
@@ -150,6 +170,87 @@
           </button>
         </td>
       </tr>
+    </tbody>
+  </nz-table>
+
+  <!-- GROUPED VIEW (New Expandable Table) -->
+  <nz-table
+    *ngIf="viewMode === 'grouped'"
+    #groupedTable
+    [nzData]="groupedData"
+    [nzLoading]="loading"
+    [nzPageSize]="pageSize"
+    [nzPageIndex]="currentPage"
+    [nzTotal]="totalRecords"
+    [nzFrontPagination]="false"
+    [nzShowSizeChanger]="true"
+    [nzPageSizeOptions]="[20, 50, 100]"
+    (nzPageIndexChange)="onPageChange($event)"
+    (nzPageSizeChange)="onPageSizeChange($event)"
+    nzSize="small"
+  >
+    <thead>
+      <tr>
+        <th nzWidth="50px"></th>
+        <th>Manufacturer</th>
+        <th>State</th>
+        <th nzWidth="100px">Aircraft Count</th>
+      </tr>
+    </thead>
+    <tbody>
+      <ng-container *ngFor="let group of groupedTable.data">
+        <!-- Parent Row: Group Summary -->
+        <tr>
+          <td 
+            [nzExpand]="isExpanded(group.key)"
+            (nzExpandChange)="onExpandChange(group.key, $event)"
+          ></td>
+          <td><strong>{{ group.manufacturer }}</strong></td>
+          <td><strong>{{ group.state }}</strong></td>
+          <td><nz-badge [nzCount]="group.count" [nzShowZero]="true"></nz-badge></td>
+        </tr>
+
+        <!-- Expanded Row: Nested Aircraft Table -->
+        <tr [nzExpand]="isExpanded(group.key)">
+          <td colspan="4" class="nested-table-cell">
+            <nz-table
+              #innerTable
+              [nzData]="group.aircraft"
+              nzSize="small"
+              [nzShowPagination]="false"
+              [nzFrontPagination]="false"
+            >
+              <thead>
+                <tr>
+                  <th>Registration</th>
+                  <th>Model</th>
+                  <th>Year</th>
+                  <th>Type</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let aircraft of innerTable.data">
+                  <td>{{ aircraft.registration_id || "N/A" }}</td>
+                  <td>{{ aircraft.model || "Unknown" }}</td>
+                  <td>{{ aircraft.year || "N/A" }}</td>
+                  <td>{{ aircraft.category || "N/A" }}</td>
+                  <td>
+                    <button
+                      nz-button
+                      nzType="link"
+                      nzSize="small"
+                      (click)="onViewDetails(aircraft.transport_id)"
+                    >
+                      View Details
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </nz-table>
+          </td>
+        </tr>
+      </ng-container>
     </tbody>
   </nz-table>
 

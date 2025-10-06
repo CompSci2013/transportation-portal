@@ -47,14 +47,9 @@ export class ManufacturerStateTablePickerComponent
   @Input() initialSelections: ManufacturerStateSelection[] = [];
   @Output() selectionChange = new EventEmitter<ManufacturerStateSelection[]>();
 
-  // Flat data (from API)
   allRows: PickerRow[] = [];
-
-  // Hierarchical data (for display)
   manufacturerGroups: ManufacturerGroup[] = [];
   filteredGroups: ManufacturerGroup[] = [];
-
-  // Selection state (unchanged - still using flat keys)
   selectedRows = new Set<string>();
 
   currentPage: number = 1;
@@ -122,7 +117,6 @@ export class ManufacturerStateTablePickerComponent
             return a.state.localeCompare(b.state);
           });
 
-          // Transform to hierarchical structure
           this.manufacturerGroups = this.groupByManufacturer(this.allRows);
           this.applyFilter();
           this.loading = false;
@@ -136,7 +130,6 @@ export class ManufacturerStateTablePickerComponent
       });
   }
 
-  // NEW: Transform flat data to hierarchical structure
   private groupByManufacturer(flatData: PickerRow[]): ManufacturerGroup[] {
     const grouped = new Map<string, ManufacturerGroup>();
 
@@ -160,7 +153,6 @@ export class ManufacturerStateTablePickerComponent
     );
   }
 
-  // NEW: Parent checkbox state calculation
   getParentCheckboxState(
     manufacturer: string
   ): 'checked' | 'indeterminate' | 'unchecked' {
@@ -176,7 +168,6 @@ export class ManufacturerStateTablePickerComponent
     return 'indeterminate';
   }
 
-  // NEW: Get all states for a manufacturer
   private getStatesForManufacturer(manufacturer: string): StateDetail[] {
     const group = this.filteredGroups.find(
       (g) => g.manufacturer === manufacturer
@@ -184,7 +175,6 @@ export class ManufacturerStateTablePickerComponent
     return group ? group.states : [];
   }
 
-  // NEW: Parent checkbox click handler
   onParentCheckboxChange(manufacturer: string, checked: boolean): void {
     const states = this.getStatesForManufacturer(manufacturer);
 
@@ -198,7 +188,6 @@ export class ManufacturerStateTablePickerComponent
     });
   }
 
-  // NEW: Child checkbox click handler
   onChildCheckboxChange(
     manufacturer: string,
     state: string,
@@ -212,12 +201,10 @@ export class ManufacturerStateTablePickerComponent
     }
   }
 
-  // NEW: Check if specific state is selected
   isStateSelected(manufacturer: string, state: string): boolean {
     return this.selectedRows.has(`${manufacturer}|${state}`);
   }
 
-  // NEW: Expand/collapse handler
   onExpandChange(manufacturer: string, expanded: boolean): void {
     const group = this.filteredGroups.find(
       (g) => g.manufacturer === manufacturer
@@ -225,6 +212,50 @@ export class ManufacturerStateTablePickerComponent
     if (group) {
       group.expanded = expanded;
     }
+  }
+
+  // NEW: Select All functionality
+  selectAll(): void {
+    this.visibleGroups.forEach((group) => {
+      group.states.forEach((state) => {
+        const key = `${group.manufacturer}|${state.state}`;
+        this.selectedRows.add(key);
+      });
+    });
+  }
+
+  // NEW: Deselect All functionality
+  deselectAll(): void {
+    this.visibleGroups.forEach((group) => {
+      group.states.forEach((state) => {
+        const key = `${group.manufacturer}|${state.state}`;
+        this.selectedRows.delete(key);
+      });
+    });
+  }
+
+  // NEW: Check if all visible items are selected
+  get allVisibleSelected(): boolean {
+    if (this.visibleGroups.length === 0) return false;
+    
+    return this.visibleGroups.every((group) =>
+      group.states.every((state) =>
+        this.selectedRows.has(`${group.manufacturer}|${state.state}`)
+      )
+    );
+  }
+
+  // NEW: Check if some (but not all) visible items are selected
+  get someVisibleSelected(): boolean {
+    if (this.visibleGroups.length === 0) return false;
+    
+    const hasAnySelected = this.visibleGroups.some((group) =>
+      group.states.some((state) =>
+        this.selectedRows.has(`${group.manufacturer}|${state.state}`)
+      )
+    );
+    
+    return hasAnySelected && !this.allVisibleSelected;
   }
 
   applyFilter(): void {
