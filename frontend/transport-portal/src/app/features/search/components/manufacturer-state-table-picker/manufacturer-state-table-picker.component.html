@@ -1,22 +1,22 @@
 <div class="picker-container">
   <div class="picker-header">
     <h4>Manufacturer + State</h4>
-    
+
     <!-- Search Box -->
     <div class="search-box">
-      <input 
-        type="text" 
+      <input
+        type="text"
         [(ngModel)]="searchTerm"
         (ngModelChange)="onSearchChange()"
-        placeholder="Search manufacturer and state..."
+        placeholder="Search manufacturer..."
         class="search-input"
       />
     </div>
-    
+
     <!-- Visible Rows Dropdown -->
     <div class="page-size-control">
       <label for="pageSize">Show:</label>
-      <select 
+      <select
         id="pageSize"
         [(ngModel)]="pageSize"
         (ngModelChange)="onPageSizeChange()"
@@ -26,7 +26,9 @@
           {{ option }} rows
         </option>
       </select>
-      <span class="total-info">of {{ rows.length }} combinations</span>
+      <span class="total-info"
+        >of {{ filteredGroups.length }} manufacturers</span
+      >
     </div>
   </div>
 
@@ -35,55 +37,98 @@
     <p>Loading combinations...</p>
   </div>
 
-  <!-- Table -->
+  <!-- Nested Table -->
   <div *ngIf="!loading" class="table-wrapper">
-    <table class="picker-table">
+    <nz-table
+      #manufacturerTable
+      [nzData]="visibleGroups"
+      [nzShowPagination]="false"
+      [nzFrontPagination]="false"
+      nzSize="middle"
+    >
       <thead>
         <tr>
+          <th nzWidth="40px"></th>
+          <!-- Checkbox -->
           <th>Manufacturer</th>
-          <th>State</th>
-          <th>Count</th>
+          <th nzWidth="100px">Count</th>
+          <th nzWidth="40px"></th>
+          <!-- Expand -->
         </tr>
       </thead>
-    </table>
-    
-    <div class="table-body-scroll" [style.max-height.px]="pageSize * 40">
-      <table class="picker-table">
-        <tbody>
-          <tr *ngFor="let row of visibleRows" [class.selected]="isRowSelected(row)">
-            <td class="manufacturer-cell">
-              <label class="checkbox-label">
-                <input 
-                  type="checkbox"
-                  [checked]="isRowSelected(row)"
-                  (change)="onManufacturerCheckboxClick(row)"
-                  class="manufacturer-checkbox"
-                />
-                {{ row.manufacturer }}
+      <tbody>
+        <ng-template ngFor let-group [ngForOf]="manufacturerTable.data">
+          <!-- Parent Row -->
+          <tr>
+            <td>
+              <label
+                nz-checkbox
+                [nzIndeterminate]="
+                  getParentCheckboxState(group.manufacturer) === 'indeterminate'
+                "
+                [nzChecked]="
+                  getParentCheckboxState(group.manufacturer) === 'checked'
+                "
+                (nzCheckedChange)="
+                  onParentCheckboxChange(group.manufacturer, $event)
+                "
+              >
               </label>
             </td>
-            <td class="state-cell">
-              <label class="checkbox-label">
-                <input 
-                  type="checkbox"
-                  [checked]="isRowSelected(row)"
-                  (change)="onStateCheckboxClick(row)"
-                  class="state-checkbox"
-                />
-                {{ row.state }}
-              </label>
-            </td>
-            <td class="count-cell">
-              {{ row.count }}
+            <td>{{ group.manufacturer }}</td>
+            <td class="count-cell">{{ group.totalCount }}</td>
+            <td
+              [nzExpand]="group.expanded"
+              (nzExpandChange)="onExpandChange(group.manufacturer, $event)"
+            ></td>
+          </tr>
+
+          <!-- Child Table (Expanded States) -->
+          <tr [nzExpand]="group.expanded">
+            <td colspan="4" style="padding: 0; background: #f9f9f9">
+              <nz-table
+                [nzData]="group.states"
+                [nzShowPagination]="false"
+                nzSize="small"
+              >
+                <tbody>
+                  <tr *ngFor="let state of group.states">
+                    <td nzWidth="40px"></td>
+                    <!-- Indent spacing -->
+                    <td nzWidth="40px">
+                      <label
+                        nz-checkbox
+                        [nzChecked]="
+                          isStateSelected(group.manufacturer, state.state)
+                        "
+                        (nzCheckedChange)="
+                          onChildCheckboxChange(
+                            group.manufacturer,
+                            state.state,
+                            $event
+                          )
+                        "
+                      >
+                      </label>
+                    </td>
+                    <td>{{ state.state }}</td>
+                    <td nzWidth="100px" class="count-cell">
+                      {{ state.count }}
+                    </td>
+                    <td nzWidth="40px"></td>
+                    <!-- Align with parent expand column -->
+                  </tr>
+                </tbody>
+              </nz-table>
             </td>
           </tr>
-        </tbody>
-      </table>
-    </div>
-    
+        </ng-template>
+      </tbody>
+    </nz-table>
+
     <!-- Pagination Controls -->
     <div class="pagination-controls" *ngIf="totalPages > 1">
-      <button 
+      <button
         type="button"
         class="btn-page"
         (click)="previousPage()"
@@ -91,9 +136,9 @@
       >
         ‹ Prev
       </button>
-      
+
       <div class="page-numbers">
-        <button 
+        <button
           *ngFor="let page of pageNumbers"
           type="button"
           class="btn-page-num"
@@ -105,8 +150,8 @@
           <span *ngIf="page === -1">...</span>
         </button>
       </div>
-      
-      <button 
+
+      <button
         type="button"
         class="btn-page"
         (click)="nextPage()"
@@ -125,8 +170,10 @@
         No selections
       </div>
       <div *ngFor="let chip of selectedChips" class="chip">
-        <span class="chip-text">{{ chip.manufacturer }} - {{ chip.state }}</span>
-        <button 
+        <span class="chip-text"
+          >{{ chip.manufacturer }} - {{ chip.state }}</span
+        >
+        <button
           type="button"
           class="chip-remove"
           (click)="removeChip(chip)"
@@ -140,7 +187,7 @@
 
   <!-- Action Buttons -->
   <div class="actions-section">
-    <button 
+    <button
       type="button"
       class="btn btn-primary"
       (click)="onApply()"
@@ -148,7 +195,7 @@
     >
       Apply ({{ selectedChips.length }})
     </button>
-    <button 
+    <button
       type="button"
       class="btn btn-secondary"
       (click)="onClear()"

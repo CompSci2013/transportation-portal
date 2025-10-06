@@ -1,4 +1,13 @@
-import { Component, OnInit, Output, EventEmitter, OnDestroy, Input, OnChanges, SimpleChanges } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  Output,
+  EventEmitter,
+  OnDestroy,
+  Input,
+  OnChanges,
+  SimpleChanges,
+} from '@angular/core';
 import { ApiService } from '../../../../services/api.service';
 import { Subscription } from 'rxjs';
 
@@ -9,6 +18,18 @@ interface PickerRow {
   key: string;
 }
 
+interface StateDetail {
+  state: string;
+  count: number;
+}
+
+interface ManufacturerGroup {
+  manufacturer: string;
+  totalCount: number;
+  states: StateDetail[];
+  expanded: boolean;
+}
+
 interface ManufacturerStateSelection {
   manufacturer: string;
   state: string;
@@ -17,27 +38,35 @@ interface ManufacturerStateSelection {
 @Component({
   selector: 'app-manufacturer-state-table-picker',
   templateUrl: './manufacturer-state-table-picker.component.html',
-  styleUrls: ['./manufacturer-state-table-picker.component.scss']
+  styleUrls: ['./manufacturer-state-table-picker.component.scss'],
 })
-export class ManufacturerStateTablePickerComponent implements OnInit, OnDestroy, OnChanges {
+export class ManufacturerStateTablePickerComponent
+  implements OnInit, OnDestroy, OnChanges
+{
   @Input() clearTrigger: number = 0;
-  @Input() initialSelections: ManufacturerStateSelection[] = []; // NEW: hydrate from parent
+  @Input() initialSelections: ManufacturerStateSelection[] = [];
   @Output() selectionChange = new EventEmitter<ManufacturerStateSelection[]>();
 
-  rows: PickerRow[] = [];
+  // Flat data (from API)
   allRows: PickerRow[] = [];
+
+  // Hierarchical data (for display)
+  manufacturerGroups: ManufacturerGroup[] = [];
+  filteredGroups: ManufacturerGroup[] = [];
+
+  // Selection state (unchanged - still using flat keys)
   selectedRows = new Set<string>();
-  
+
   currentPage: number = 1;
   pageSize: number = 20;
   visibleRowOptions = [5, 10, 20, 50];
   searchTerm: string = '';
   loading: boolean = false;
-  
+
   private subscription?: Subscription;
   private lastClearTrigger: number = 0;
 
-  constructor(private apiService: ApiService) { }
+  constructor(private apiService: ApiService) {}
 
   ngOnInit(): void {
     this.loadData();
@@ -45,7 +74,6 @@ export class ManufacturerStateTablePickerComponent implements OnInit, OnDestroy,
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    // Handle clearTrigger
     if (changes['clearTrigger'] && !changes['clearTrigger'].firstChange) {
       const newValue = changes['clearTrigger'].currentValue;
       if (newValue !== this.lastClearTrigger) {
@@ -54,7 +82,6 @@ export class ManufacturerStateTablePickerComponent implements OnInit, OnDestroy,
       }
     }
 
-    // Handle initialSelections (for browser back/forward, deep links)
     if (changes['initialSelections']) {
       this.hydrateSelections();
     }
@@ -62,9 +89,9 @@ export class ManufacturerStateTablePickerComponent implements OnInit, OnDestroy,
 
   private hydrateSelections(): void {
     this.selectedRows.clear();
-    
+
     if (this.initialSelections && this.initialSelections.length > 0) {
-      this.initialSelections.forEach(selection => {
+      this.initialSelections.forEach((selection) => {
         const key = `${selection.manufacturer}|${selection.state}`;
         this.selectedRows.add(key);
       });
@@ -77,67 +104,138 @@ export class ManufacturerStateTablePickerComponent implements OnInit, OnDestroy,
 
   loadData(): void {
     this.loading = true;
-    
-    this.subscription = this.apiService.getManufacturerStateCombinations(1, 10000, '').subscribe({
-      next: (response) => {
-        this.allRows = response.items.map((item: any) => ({
-          manufacturer: item.manufacturer,
-          state: item.state,
-          count: item.count,
-          key: `${item.manufacturer}|${item.state}`
-        }));
-        
-        this.allRows.sort((a, b) => {
-          const mfrCompare = a.manufacturer.localeCompare(b.manufacturer);
-          if (mfrCompare !== 0) return mfrCompare;
-          return a.state.localeCompare(b.state);
+
+    this.subscription = this.apiService
+      .getManufacturerStateCombinations(1, 10000, '')
+      .subscribe({
+        next: (response) => {
+          this.allRows = response.items.map((item: any) => ({
+            manufacturer: item.manufacturer,
+            state: item.state,
+            count: item.count,
+            key: `${item.manufacturer}|${item.state}`,
+          }));
+
+          this.allRows.sort((a, b) => {
+            const mfrCompare = a.manufacturer.localeCompare(b.manufacturer);
+            if (mfrCompare !== 0) return mfrCompare;
+            return a.state.localeCompare(b.state);
+          });
+
+          // Transform to hierarchical structure
+          this.manufacturerGroups = this.groupByManufacturer(this.allRows);
+          this.applyFilter();
+          this.loading = false;
+
+          this.hydrateSelections();
+        },
+        error: (error) => {
+          console.error('Failed to load combinations:', error);
+          this.loading = false;
+        },
+      });
+  }
+
+  // NEW: Transform flat data to hierarchical structure
+  private groupByManufacturer(flatData: PickerRow[]): ManufacturerGroup[] {
+    const grouped = new Map<string, ManufacturerGroup>();
+
+    for (const row of flatData) {
+      if (!grouped.has(row.manufacturer)) {
+        grouped.set(row.manufacturer, {
+          manufacturer: row.manufacturer,
+          totalCount: 0,
+          states: [],
+          expanded: false,
         });
-        
-        this.applyFilter();
-        this.loading = false;
-        
-        // After data loads, hydrate selections from initialSelections
-        this.hydrateSelections();
-      },
-      error: (error) => {
-        console.error('Failed to load combinations:', error);
-        this.loading = false;
+      }
+
+      const group = grouped.get(row.manufacturer)!;
+      group.totalCount += row.count;
+      group.states.push({ state: row.state, count: row.count });
+    }
+
+    return Array.from(grouped.values()).sort((a, b) =>
+      a.manufacturer.localeCompare(b.manufacturer)
+    );
+  }
+
+  // NEW: Parent checkbox state calculation
+  getParentCheckboxState(
+    manufacturer: string
+  ): 'checked' | 'indeterminate' | 'unchecked' {
+    const states = this.getStatesForManufacturer(manufacturer);
+    if (!states || states.length === 0) return 'unchecked';
+
+    const checkedCount = states.filter((s) =>
+      this.selectedRows.has(`${manufacturer}|${s.state}`)
+    ).length;
+
+    if (checkedCount === 0) return 'unchecked';
+    if (checkedCount === states.length) return 'checked';
+    return 'indeterminate';
+  }
+
+  // NEW: Get all states for a manufacturer
+  private getStatesForManufacturer(manufacturer: string): StateDetail[] {
+    const group = this.filteredGroups.find(
+      (g) => g.manufacturer === manufacturer
+    );
+    return group ? group.states : [];
+  }
+
+  // NEW: Parent checkbox click handler
+  onParentCheckboxChange(manufacturer: string, checked: boolean): void {
+    const states = this.getStatesForManufacturer(manufacturer);
+
+    states.forEach((state) => {
+      const key = `${manufacturer}|${state.state}`;
+      if (checked) {
+        this.selectedRows.add(key);
+      } else {
+        this.selectedRows.delete(key);
       }
     });
   }
 
-  onManufacturerCheckboxClick(clickedRow: PickerRow): void {
-    const manufacturer = clickedRow.manufacturer;
-    const isCurrentlySelected = this.isRowSelected(clickedRow);
-    const relatedRows = this.allRows.filter(r => r.manufacturer === manufacturer);
-    
-    if (isCurrentlySelected) {
-      relatedRows.forEach(row => this.selectedRows.delete(row.key));
+  // NEW: Child checkbox click handler
+  onChildCheckboxChange(
+    manufacturer: string,
+    state: string,
+    checked: boolean
+  ): void {
+    const key = `${manufacturer}|${state}`;
+    if (checked) {
+      this.selectedRows.add(key);
     } else {
-      relatedRows.forEach(row => this.selectedRows.add(row.key));
+      this.selectedRows.delete(key);
     }
   }
 
-  onStateCheckboxClick(clickedRow: PickerRow): void {
-    if (this.selectedRows.has(clickedRow.key)) {
-      this.selectedRows.delete(clickedRow.key);
-    } else {
-      this.selectedRows.add(clickedRow.key);
-    }
+  // NEW: Check if specific state is selected
+  isStateSelected(manufacturer: string, state: string): boolean {
+    return this.selectedRows.has(`${manufacturer}|${state}`);
   }
 
-  isRowSelected(row: PickerRow): boolean {
-    return this.selectedRows.has(row.key);
+  // NEW: Expand/collapse handler
+  onExpandChange(manufacturer: string, expanded: boolean): void {
+    const group = this.filteredGroups.find(
+      (g) => g.manufacturer === manufacturer
+    );
+    if (group) {
+      group.expanded = expanded;
+    }
   }
 
   applyFilter(): void {
     if (!this.searchTerm.trim()) {
-      this.rows = this.allRows;
+      this.filteredGroups = this.manufacturerGroups;
     } else {
       const term = this.searchTerm.toLowerCase();
-      this.rows = this.allRows.filter(row => 
-        row.manufacturer.toLowerCase().includes(term) ||
-        row.state.toLowerCase().includes(term)
+      this.filteredGroups = this.manufacturerGroups.filter(
+        (group) =>
+          group.manufacturer.toLowerCase().includes(term) ||
+          group.states.some((s) => s.state.toLowerCase().includes(term))
       );
     }
     this.currentPage = 1;
@@ -152,14 +250,14 @@ export class ManufacturerStateTablePickerComponent implements OnInit, OnDestroy,
     this.savePageSizePreference();
   }
 
-  get visibleRows(): PickerRow[] {
+  get visibleGroups(): ManufacturerGroup[] {
     const start = (this.currentPage - 1) * this.pageSize;
     const end = start + this.pageSize;
-    return this.rows.slice(start, end);
+    return this.filteredGroups.slice(start, end);
   }
 
   get totalPages(): number {
-    return Math.ceil(this.rows.length / this.pageSize);
+    return Math.ceil(this.filteredGroups.length / this.pageSize);
   }
 
   get hasPreviousPage(): boolean {
@@ -191,7 +289,7 @@ export class ManufacturerStateTablePickerComponent implements OnInit, OnDestroy,
   get pageNumbers(): number[] {
     const pages: number[] = [];
     const maxVisible = 5;
-    
+
     if (this.totalPages <= maxVisible) {
       for (let i = 1; i <= this.totalPages; i++) {
         pages.push(i);
@@ -199,30 +297,32 @@ export class ManufacturerStateTablePickerComponent implements OnInit, OnDestroy,
     } else {
       const start = Math.max(1, this.currentPage - 2);
       const end = Math.min(this.totalPages, this.currentPage + 2);
-      
+
       if (start > 1) pages.push(1);
       if (start > 2) pages.push(-1);
-      
+
       for (let i = start; i <= end; i++) {
         pages.push(i);
       }
-      
+
       if (end < this.totalPages - 1) pages.push(-1);
       if (end < this.totalPages) pages.push(this.totalPages);
     }
-    
+
     return pages;
   }
 
   get selectedChips(): ManufacturerStateSelection[] {
-    return Array.from(this.selectedRows).map(key => {
-      const [manufacturer, state] = key.split('|');
-      return { manufacturer, state };
-    }).sort((a, b) => {
-      const mfrCompare = a.manufacturer.localeCompare(b.manufacturer);
-      if (mfrCompare !== 0) return mfrCompare;
-      return a.state.localeCompare(b.state);
-    });
+    return Array.from(this.selectedRows)
+      .map((key) => {
+        const [manufacturer, state] = key.split('|');
+        return { manufacturer, state };
+      })
+      .sort((a, b) => {
+        const mfrCompare = a.manufacturer.localeCompare(b.manufacturer);
+        if (mfrCompare !== 0) return mfrCompare;
+        return a.state.localeCompare(b.state);
+      });
   }
 
   removeChip(chip: ManufacturerStateSelection): void {
@@ -250,6 +350,9 @@ export class ManufacturerStateTablePickerComponent implements OnInit, OnDestroy,
   }
 
   private savePageSizePreference(): void {
-    localStorage.setItem('manufacturerStatePickerPageSize', this.pageSize.toString());
+    localStorage.setItem(
+      'manufacturerStatePickerPageSize',
+      this.pageSize.toString()
+    );
   }
 }
