@@ -361,6 +361,45 @@ export class ManufacturerStateTablePickerComponent
     this.selectedRows.delete(key);
   }
 
+  // Get chips grouped by manufacturer
+  get groupedChips(): Array<{manufacturer: string; states: string[]; count: number}> {
+    const groups = new Map<string, string[]>();
+    
+    this.selectedChips.forEach(function(chip) {
+      if (!groups.has(chip.manufacturer)) {
+        groups.set(chip.manufacturer, []);
+      }
+      groups.get(chip.manufacturer)!.push(chip.state);
+    });
+    
+    return Array.from(groups.entries())
+      .map(function(entry) {
+        return {
+          manufacturer: entry[0],
+          states: entry[1].sort(),
+          count: entry[1].length
+        };
+      })
+      .sort(function(a, b) {
+        return a.manufacturer.localeCompare(b.manufacturer);
+      });
+  }
+
+  // Remove all states for a manufacturer
+  removeManufacturerChip(manufacturer: string): void {
+    const keysToRemove: string[] = [];
+    this.selectedRows.forEach(function(key) {
+      if (key.indexOf(manufacturer + '|') === 0) {
+        keysToRemove.push(key);
+      }
+    });
+    
+    for (let i = 0; i < keysToRemove.length; i++) {
+      this.selectedRows.delete(keysToRemove[i]);
+    }
+  }
+
+
   onApply(): void {
     this.selectionChange.emit(this.selectedChips);
   }

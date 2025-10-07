@@ -197,6 +197,30 @@
       }
     }
   }
+
+  // Parent chip (manufacturer with count)
+  .chip-parent {
+    background: #2c5aa0;  // Darker blue
+    font-weight: 600;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.9rem;
+    margin-right: 0.25rem;  // Small gap before children
+
+    .chip-badge {
+      font-weight: 400;
+      opacity: 0.9;
+      margin-left: 0.25rem;
+    }
+  }
+
+  // Child chip (individual state)
+  .chip-child {
+    background: #6ba3e8;  // Lighter blue
+    font-weight: 400;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.8rem;
+    margin-right: 0.3rem;  // Spacing between siblings
+  }
 }
 
 // ========== ACTIONS ==========
