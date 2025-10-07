@@ -185,34 +185,44 @@
         No selections
       </div>
       <!-- Hierarchical chip display -->
-      <ng-container *ngFor="let group of groupedChips">
-        <!-- Parent chip: Manufacturer with count -->
-        <div class="chip chip-parent">
-          <span class="chip-text">
-            {{ group.manufacturer }}
-            <span class="chip-badge">({{ group.count }})</span>
-          </span>
-          <button
-            type="button"
-            class="chip-remove"
-            (click)="removeManufacturerChip(group.manufacturer)"
-            [attr.aria-label]="'Remove all ' + group.manufacturer + ' selections'"
-            title="Remove all {{ group.manufacturer }} states"
-          >
-            ×
-          </button>
-        </div>
-        <!-- Child chips: Individual states -->
-        <div *ngFor="let state of group.states" class="chip chip-child">
-          <span class="chip-text">{{ state }}</span>
-          <button
-            type="button"
-            class="chip-remove"
-            (click)="removeChip({ manufacturer: group.manufacturer, state: state })"
-            [attr.aria-label]="'Remove ' + group.manufacturer + ' - ' + state"
-          >
-            ×
-          </button>
+      <ng-container *ngFor="let group of groupedChips; let i = index">
+        <!-- Separator line between groups -->
+        <hr *ngIf="i > 0" class="chip-separator" />
+        
+        <!-- Group wrapper for manufacturer + states -->
+        <div class="chip-group">
+          <!-- Parent chip: Manufacturer with count -->
+          <div class="chip chip-parent">
+            <span class="chip-text">
+              {{ group.manufacturer }}
+              <span class="chip-badge">({{ group.count }})</span>
+            </span>
+            <button
+              type="button"
+              class="chip-remove"
+              (click)="removeManufacturerChip(group.manufacturer)"
+              [attr.aria-label]="
+                'Remove all ' + group.manufacturer + ' selections'
+              "
+              title="Remove all {{ group.manufacturer }} states"
+            >
+              ×
+            </button>
+          </div>
+          <!-- Child chips: Individual states -->
+          <div *ngFor="let state of group.states" class="chip chip-child">
+            <span class="chip-text">{{ state }}</span>
+            <button
+              type="button"
+              class="chip-remove"
+              (click)="
+                removeChip({ manufacturer: group.manufacturer, state: state })
+              "
+              [attr.aria-label]="'Remove ' + group.manufacturer + ' - ' + state"
+            >
+              ×
+            </button>
+          </div>
         </div>
       </ng-container>
     </div>
@@ -226,7 +236,9 @@
       (click)="onApply()"
       [disabled]="selectedChips.length === 0"
       nz-tooltip
-      nzTooltipTitle="Applies {{ selectedChips.length }} manufacturer-state combination filters. The actual number of aircraft returned will depend on how many aircraft match these combinations."
+      nzTooltipTitle="Applies {{
+        selectedChips.length
+      }} manufacturer-state combination filters. The actual number of aircraft returned will depend on how many aircraft match these combinations."
     >
       Apply ({{ selectedChips.length }})
     </button>

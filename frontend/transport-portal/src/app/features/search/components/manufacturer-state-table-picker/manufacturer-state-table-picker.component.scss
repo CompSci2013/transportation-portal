@@ -144,16 +144,38 @@
   }
 
   .chips-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
     padding: 0.75rem;
     background: #f9f9f9;
     border: 1px solid #ddd;
     border-radius: 4px;
     min-height: 50px;
-    max-height: 150px;
+    max-height: 200px;
     overflow-y: auto;
+  }
+
+  .chip-separator {
+    width: 100%;
+    border: none;
+    border-top: 1px solid #f9f9f9; // Same as background
+    margin: 0;
+    padding: 0;
+  }
+
+  .chip-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem; // Gap between chips (horizontal and vertical)
+    padding: 0.1rem 0.125rem; // Comfortable vertical spacing between rows
+    margin: 0 -0.5rem; // Extend to edges
+
+    // Alternating row colors (accounting for HR elements)
+    &:nth-of-type(odd) {
+      background: rgba(0, 0, 0, 0.03); // Light gray
+    }
+
+    &:nth-of-type(even) {
+      background: transparent;
+    }
   }
 
   .no-selections {
@@ -165,32 +187,36 @@
   .chip {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
     padding: 0.25rem 0.5rem;
     background: #4a90e2;
     color: white;
     border-radius: 16px;
     font-size: 0.85rem;
+    line-height: 1.4; // Better vertical alignment
 
     .chip-text {
       white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
     }
 
     .chip-remove {
       background: none;
       border: none;
       color: white;
-      font-size: 1.25rem;
+      font-size: 1.1rem;
       line-height: 1;
       cursor: pointer;
       padding: 0;
-      width: 18px;
-      height: 18px;
-      display: flex;
+      width: 16px;
+      height: 16px;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
       border-radius: 50%;
       transition: background-color 0.2s;
+      vertical-align: middle; // Align with text
+      margin-left: 0.25rem;
 
       &:hover {
         background-color: rgba(255, 255, 255, 0.2);
@@ -200,11 +226,10 @@
 
   // Parent chip (manufacturer with count)
   .chip-parent {
-    background: #2c5aa0;  // Darker blue
+    background: #2c5aa0; // Darker blue
     font-weight: 600;
     padding: 0.3rem 0.6rem;
     font-size: 0.9rem;
-    margin-right: 0.25rem;  // Small gap before children
 
     .chip-badge {
       font-weight: 400;
@@ -215,11 +240,10 @@
 
   // Child chip (individual state)
   .chip-child {
-    background: #6ba3e8;  // Lighter blue
+    background: #6ba3e8; // Lighter blue
     font-weight: 400;
     padding: 0.2rem 0.5rem;
     font-size: 0.8rem;
-    margin-right: 0.3rem;  // Spacing between siblings
   }
 }
 
@@ -281,7 +305,7 @@
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px solid #eee;
-  
+
   .btn-page {
     min-width: 32px;
     height: 32px;
@@ -296,12 +320,12 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    
+
     &:hover:not(:disabled) {
       color: #40a9ff;
       border-color: #40a9ff;
     }
-    
+
     &:disabled {
       color: rgba(0, 0, 0, 0.25);
       background: #f5f5f5;
@@ -309,12 +333,12 @@
       cursor: not-allowed;
     }
   }
-  
+
   .page-numbers {
     display: flex;
     gap: 0.25rem;
   }
-  
+
   .btn-page-num {
     min-width: 32px;
     height: 32px;
@@ -329,12 +353,12 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    
+
     &:hover:not(:disabled):not(.active) {
       color: #40a9ff;
       border-color: #40a9ff;
     }
-    
+
     &.active {
       background: #1890ff;
       color: white;
@@ -342,7 +366,7 @@
       font-weight: 500;
       z-index: 1;
     }
-    
+
     &:disabled {
       border: none;
       background: transparent;
