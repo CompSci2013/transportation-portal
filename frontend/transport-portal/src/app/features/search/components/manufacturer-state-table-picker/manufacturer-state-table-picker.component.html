@@ -39,108 +39,110 @@
 
   <!-- Nested Table -->
   <div *ngIf="!loading" class="table-wrapper">
-    <nz-table
-      #manufacturerTable
-      [nzData]="visibleGroups"
-      [nzShowPagination]="false"
-      [nzFrontPagination]="false"
-      nzSize="middle"
-    >
-      <thead>
-        <tr>
-          <th nzWidth="40px">
-            <!-- Select All Checkbox -->
-            <label
-              nz-checkbox
-              [nzIndeterminate]="someVisibleSelected"
-              [nzChecked]="allVisibleSelected"
-              (nzCheckedChange)="
-                allVisibleSelected ? deselectAll() : selectAll()
-              "
-              title="{{
-                allVisibleSelected
-                  ? 'Deselect all visible'
-                  : 'Select all visible'
-              }}"
-            >
-            </label>
-          </th>
-          <th>Manufacturer</th>
-          <th nzWidth="100px">Count</th>
-          <th nzWidth="40px"></th>
-          <!-- Expand -->
-        </tr>
-      </thead>
-      <tbody>
-        <ng-template ngFor let-group [ngForOf]="manufacturerTable.data">
-          <!-- Parent Row -->
+    <div class="table-scroll-wrapper">
+      <nz-table
+        #manufacturerTable
+        [nzData]="visibleGroups"
+        [nzShowPagination]="false"
+        [nzFrontPagination]="false"
+        nzSize="middle"
+      >
+        <thead>
           <tr>
-            <td>
+            <th nzWidth="40px">
+              <!-- Select All Checkbox -->
               <label
                 nz-checkbox
-                [nzIndeterminate]="
-                  getParentCheckboxState(group.manufacturer) === 'indeterminate'
-                "
-                [nzChecked]="
-                  getParentCheckboxState(group.manufacturer) === 'checked'
-                "
+                [nzIndeterminate]="someVisibleSelected"
+                [nzChecked]="allVisibleSelected"
                 (nzCheckedChange)="
-                  onParentCheckboxChange(group.manufacturer, $event)
+                  allVisibleSelected ? deselectAll() : selectAll()
                 "
+                title="{{
+                  allVisibleSelected
+                    ? 'Deselect all visible'
+                    : 'Select all visible'
+                }}"
               >
               </label>
-            </td>
-            <td>{{ group.manufacturer }}</td>
-            <td class="count-cell">{{ group.totalCount }}</td>
-            <td
-              [nzExpand]="group.expanded"
-              (nzExpandChange)="onExpandChange(group.manufacturer, $event)"
-            ></td>
+            </th>
+            <th>Manufacturer</th>
+            <th nzWidth="100px">Count</th>
+            <th nzWidth="40px"></th>
+            <!-- Expand -->
           </tr>
+        </thead>
+        <tbody>
+          <ng-template ngFor let-group [ngForOf]="manufacturerTable.data">
+            <!-- Parent Row -->
+            <tr>
+              <td>
+                <label
+                  nz-checkbox
+                  [nzIndeterminate]="
+                    getParentCheckboxState(group.manufacturer) ===
+                    'indeterminate'
+                  "
+                  [nzChecked]="
+                    getParentCheckboxState(group.manufacturer) === 'checked'
+                  "
+                  (nzCheckedChange)="
+                    onParentCheckboxChange(group.manufacturer, $event)
+                  "
+                >
+                </label>
+              </td>
+              <td>{{ group.manufacturer }}</td>
+              <td class="count-cell">{{ group.totalCount }}</td>
+              <td
+                [nzExpand]="group.expanded"
+                (nzExpandChange)="onExpandChange(group.manufacturer, $event)"
+              ></td>
+            </tr>
 
-          <!-- Child Table (Expanded States) -->
-          <tr [nzExpand]="group.expanded">
-            <td colspan="4" style="padding: 0; background: #f9f9f9">
-              <nz-table
-                [nzData]="group.states"
-                [nzShowPagination]="false"
-                nzSize="small"
-              >
-                <tbody>
-                  <tr *ngFor="let state of group.states">
-                    <td nzWidth="40px"></td>
-                    <!-- Indent spacing -->
-                    <td nzWidth="40px">
-                      <label
-                        nz-checkbox
-                        [nzChecked]="
-                          isStateSelected(group.manufacturer, state.state)
-                        "
-                        (nzCheckedChange)="
-                          onChildCheckboxChange(
-                            group.manufacturer,
-                            state.state,
-                            $event
-                          )
-                        "
-                      >
-                      </label>
-                    </td>
-                    <td>{{ state.state }}</td>
-                    <td nzWidth="100px" class="count-cell">
-                      {{ state.count }}
-                    </td>
-                    <td nzWidth="40px"></td>
-                    <!-- Align with parent expand column -->
-                  </tr>
-                </tbody>
-              </nz-table>
-            </td>
-          </tr>
-        </ng-template>
-      </tbody>
-    </nz-table>
-
+            <!-- Child Table (Expanded States) -->
+            <tr [nzExpand]="group.expanded">
+              <td colspan="4" style="padding: 0; background: #f9f9f9">
+                <nz-table
+                  [nzData]="group.states"
+                  [nzShowPagination]="false"
+                  nzSize="small"
+                >
+                  <tbody>
+                    <tr *ngFor="let state of group.states">
+                      <td nzWidth="40px"></td>
+                      <!-- Indent spacing -->
+                      <td nzWidth="40px">
+                        <label
+                          nz-checkbox
+                          [nzChecked]="
+                            isStateSelected(group.manufacturer, state.state)
+                          "
+                          (nzCheckedChange)="
+                            onChildCheckboxChange(
+                              group.manufacturer,
+                              state.state,
+                              $event
+                            )
+                          "
+                        >
+                        </label>
+                      </td>
+                      <td>{{ state.state }}</td>
+                      <td nzWidth="100px" class="count-cell">
+                        {{ state.count }}
+                      </td>
+                      <td nzWidth="40px"></td>
+                      <!-- Align with parent expand column -->
+                    </tr>
+                  </tbody>
+                </nz-table>
+              </td>
+            </tr>
+          </ng-template>
+        </tbody>
+      </nz-table>
+    </div>
     <!-- Pagination Controls -->
     <div class="pagination-controls" *ngIf="totalPages > 1">
       <button
@@ -188,7 +190,7 @@
       <ng-container *ngFor="let group of groupedChips; let i = index">
         <!-- Separator line between groups -->
         <hr *ngIf="i > 0" class="chip-separator" />
-        
+
         <!-- Group wrapper for manufacturer + states -->
         <div class="chip-group">
           <!-- Parent chip: Manufacturer with count -->

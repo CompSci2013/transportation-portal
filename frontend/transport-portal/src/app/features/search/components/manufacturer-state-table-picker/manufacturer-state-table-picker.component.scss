@@ -5,6 +5,7 @@
   padding: 1rem;
   max-width: 100%;
   min-width: 400px;
+  overflow-x: auto;
 }
 
 // ========== HEADER ==========
@@ -58,8 +59,33 @@
   margin-bottom: 1rem;
 }
 
+.table-scroll-wrapper {
+  overflow-x: auto;
+  overflow-y: visible;
+  max-width: 100%;
+
+  &::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+
+    &:hover {
+      background: #555;
+    }
+  }
+}
+
 .picker-table {
   width: 100%;
+  min-width: 600px;
   border-collapse: collapse;
 
   thead {
