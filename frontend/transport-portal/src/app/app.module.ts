@@ -16,7 +16,10 @@ import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
 
 // Icon imports - using more distinct icons
 import { IconDefinition } from '@ant-design/icons-angular';
-import { UnorderedListOutline, AppstoreOutline } from '@ant-design/icons-angular/icons';
+import {
+  UnorderedListOutline,
+  AppstoreOutline,
+} from '@ant-design/icons-angular/icons';
 
 const icons: IconDefinition[] = [UnorderedListOutline, AppstoreOutline];
 
@@ -35,13 +38,11 @@ import { StatisticsDashboardComponent } from './features/search/pages/statistics
 // Feature: Search - Components
 import { SearchFormComponent } from './features/search/components/search-form/search-form.component';
 import { ResultsTableComponent } from './features/search/components/results-table/results-table.component';
-import { ManufacturerStatePickerComponent } from './features/search/components/manufacturer-state-picker/manufacturer-state-picker.component';
 import { ManufacturerStateTablePickerComponent } from './features/search/components/manufacturer-state-table-picker/manufacturer-state-table-picker.component';
 
 // Shared Components
 import { HistogramComponent } from './shared/components/histogram/histogram.component';
 import { PaginationComponent } from './shared/components/pagination/pagination.component';
-import { FilterPickerComponent } from './shared/components/filter-picker/filter-picker.component';
 
 @NgModule({
   declarations: [
@@ -53,12 +54,10 @@ import { FilterPickerComponent } from './shared/components/filter-picker/filter-
     // Search Components
     SearchFormComponent,
     ResultsTableComponent,
-    ManufacturerStatePickerComponent,
     ManufacturerStateTablePickerComponent,
     // Shared Components
     HistogramComponent,
     PaginationComponent,
-    FilterPickerComponent,
   ],
   imports: [
     BrowserModule,
