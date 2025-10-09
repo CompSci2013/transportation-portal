@@ -1,0 +1,1280 @@
+# User Preferences Implementation Roadmap
+
+**Project:** Transportation Portal  
+**Feature:** Server-Side User Preferences with Authentication  
+**Goal:** User preferences persist across devices, browsers, and cache clears  
+**Created:** October 9, 2025
+
+---
+
+## Executive Summary
+
+This roadmap outlines the implementation of a complete user authentication and preferences system that ensures user-defined settings persist across:
+- Different devices/computers
+- Different browsers
+- After browser cache/data wipes
+- After logout/login cycles
+
+**Core Principle:** User preferences stored on server (Elasticsearch), retrieved on login, applied to UI.
+
+---
+
+## Prerequisites
+
+### Already Implemented ✅
+- Elasticsearch cluster operational (`data` namespace)
+- Backend API framework (Node.js + Express)
+- Frontend state management (StateManagementService)
+- JWT dependencies installed (jsonwebtoken, bcryptjs)
+- UserPreferences TypeScript model defined
+
+### Technology Stack
+- **Auth:** JWT tokens (httpOnly cookies or Authorization header)
+- **Storage:** Elasticsearch index `user-preferences`
+- **Backend:** Node.js + Express + JWT + bcryptjs
+- **Frontend:** Angular 13 + RxJS
+
+---
+
+## Implementation Milestones
+
+### **PHASE 1: Backend Authentication Foundation**
+
+#### Milestone 1.1: User Data Model & Elasticsearch Index
+**Estimated Time:** 2-4 hours  
+**Dependencies:** None  
+**Deliverables:**
+- Elasticsearch index: `user-accounts`
+- User schema with hashed passwords
+- Index creation script
+
+**Tasks:**
+1. Create `backend/models/user.model.js`:
+```javascript
+{
+  userId: string,           // Unique identifier (email or UUID)
+  email: string,            // Login identifier
+  passwordHash: string,     // bcrypt hashed password
+  displayName: string,      // User's display name
+  role: string,             // 'user' | 'admin'
+  createdAt: timestamp,
+  lastLogin: timestamp,
+  isActive: boolean
+}
+```
+
+2. Create `backend/scripts/create-user-indices.js`:
+```javascript
+// Create user-accounts index
+// Create user-preferences index
+```
+
+3. Run script to create indices:
+```bash
+cd backend
+node scripts/create-user-indices.js
+```
+
+**Validation:**
+```bash
+curl http://thor:30398/user-accounts/_count
+curl http://thor:30398/user-preferences/_count
+```
+
+---
+
+#### Milestone 1.2: Authentication Controller & Routes
+**Estimated Time:** 4-6 hours  
+**Dependencies:** Milestone 1.1  
+**Deliverables:**
+- Auth endpoints: `/api/v1/auth/register`, `/login`, `/logout`, `/me`
+- Password hashing with bcrypt
+- JWT token generation
+
+**Tasks:**
+1. Create `backend/controllers/authController.js`:
+```javascript
+exports.register = async (req, res) => {
+  // Validate input
+  // Hash password with bcrypt
+  // Create user document in Elasticsearch
+  // Return success
+}
+
+exports.login = async (req, res) => {
+  // Validate credentials
+  // Check password with bcrypt.compare()
+  // Generate JWT token
+  // Set httpOnly cookie or return token
+  // Update lastLogin timestamp
+}
+
+exports.logout = async (req, res) => {
+  // Clear httpOnly cookie or invalidate token
+}
+
+exports.getCurrentUser = async (req, res) => {
+  // Return current user info (from JWT)
+}
+```
+
+2. Create `backend/routes/authRoutes.js`:
+```javascript
+router.post('/register', authController.register);
+router.post('/login', authController.login);
+router.post('/logout', authController.logout);
+router.get('/me', authMiddleware, authController.getCurrentUser);
+```
+
+3. Mount routes in `backend/index.js`:
+```javascript
+app.use('/api/v1/auth', authRoutes);
+```
+
+**Validation:**
+```bash
+# Register user
+curl -X POST http://transportation.minilab/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"Test123!","displayName":"Test User"}'
+
+# Login
+curl -X POST http://transportation.minilab/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"Test123!"}'
+```
+
+---
+
+#### Milestone 1.3: JWT Authentication Middleware
+**Estimated Time:** 2-3 hours  
+**Dependencies:** Milestone 1.2  
+**Deliverables:**
+- JWT verification middleware
+- Protected route pattern
+
+**Tasks:**
+1. Create `backend/middleware/authMiddleware.js`:
+```javascript
+const jwt = require('jsonwebtoken');
+
+module.exports = (req, res, next) => {
+  // Extract token from Authorization header or cookie
+  const token = req.cookies.token || 
+                req.headers.authorization?.replace('Bearer ', '');
+  
+  if (!token) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded; // Attach user info to request
+    next();
+  } catch (error) {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+};
+```
+
+2. Apply middleware to protected routes:
+```javascript
+// Protect all preferences routes
+app.use('/api/v1/preferences', authMiddleware);
+```
+
+**Validation:**
+```bash
+# Try accessing preferences without token (should fail)
+curl http://transportation.minilab/api/v1/preferences/me
+
+# Try with valid token (should succeed)
+curl http://transportation.minilab/api/v1/preferences/me \
+  -H "Authorization: Bearer <token>"
+```
+
+---
+
+### **PHASE 2: Preferences Backend API**
+
+#### Milestone 2.1: Preferences Data Model & Controller
+**Estimated Time:** 3-4 hours  
+**Dependencies:** Milestone 1.3  
+**Deliverables:**
+- Preferences schema
+- CRUD endpoints for preferences
+
+**Tasks:**
+1. Define preferences schema in `backend/models/preferences.model.js`:
+```javascript
+{
+  userId: string,              // References user-accounts.userId
+  defaultPageSize: number,     // 20 | 50 | 100
+  defaultView: string,         // 'table' | 'cards'
+  theme: string,               // 'light' | 'dark'
+  defaultSort: {
+    field: string,
+    order: string              // 'asc' | 'desc'
+  },
+  tableColumns: {              // Visible columns configuration
+    registration: boolean,
+    manufacturer: boolean,
+    model: boolean,
+    year: boolean,
+    category: boolean,
+    state: boolean
+  },
+  savedSearches: [             // Array of saved search configurations
+    {
+      id: string,
+      name: string,
+      filters: object,
+      createdAt: timestamp
+    }
+  ],
+  recentSearches: [            // Last 10 searches
+    {
+      filters: object,
+      timestamp: timestamp
+    }
+  ],
+  updatedAt: timestamp
+}
+```
+
+2. Create `backend/controllers/preferencesController.js`:
+```javascript
+exports.getPreferences = async (req, res) => {
+  // Get userId from req.user (JWT)
+  // Query Elasticsearch for preferences
+  // Return preferences or defaults
+}
+
+exports.updatePreferences = async (req, res) => {
+  // Get userId from req.user
+  // Validate preferences object
+  // Upsert to Elasticsearch
+  // Return updated preferences
+}
+
+exports.saveSearch = async (req, res) => {
+  // Add new saved search to preferences.savedSearches
+}
+
+exports.deleteSavedSearch = async (req, res) => {
+  // Remove saved search by ID
+}
+```
+
+3. Create `backend/routes/preferencesRoutes.js`:
+```javascript
+router.get('/me', authMiddleware, preferencesController.getPreferences);
+router.put('/me', authMiddleware, preferencesController.updatePreferences);
+router.post('/me/saved-searches', authMiddleware, preferencesController.saveSearch);
+router.delete('/me/saved-searches/:id', authMiddleware, preferencesController.deleteSavedSearch);
+```
+
+4. Mount routes:
+```javascript
+app.use('/api/v1/preferences', preferencesRoutes);
+```
+
+**Validation:**
+```bash
+# Get preferences (should return defaults if none exist)
+curl http://transportation.minilab/api/v1/preferences/me \
+  -H "Authorization: Bearer <token>"
+
+# Update preferences
+curl -X PUT http://transportation.minilab/api/v1/preferences/me \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"defaultPageSize":100,"theme":"dark"}'
+```
+
+---
+
+#### Milestone 2.2: Default Preferences Logic
+**Estimated Time:** 1-2 hours  
+**Dependencies:** Milestone 2.1  
+**Deliverables:**
+- Default preferences factory function
+- Automatic creation on first login
+
+**Tasks:**
+1. Create `backend/utils/defaultPreferences.js`:
+```javascript
+module.exports.getDefaultPreferences = (userId) => {
+  return {
+    userId,
+    defaultPageSize: 20,
+    defaultView: 'table',
+    theme: 'light',
+    defaultSort: {
+      field: 'year',
+      order: 'desc'
+    },
+    tableColumns: {
+      registration: true,
+      manufacturer: true,
+      model: true,
+      year: true,
+      category: true,
+      state: true
+    },
+    savedSearches: [],
+    recentSearches: [],
+    updatedAt: new Date().toISOString()
+  };
+};
+```
+
+2. Update `preferencesController.getPreferences`:
+```javascript
+exports.getPreferences = async (req, res) => {
+  const userId = req.user.userId;
+  
+  // Try to get existing preferences
+  let prefs = await esClient.get({
+    index: 'user-preferences',
+    id: userId
+  }).catch(() => null);
+  
+  // If none exist, create defaults
+  if (!prefs) {
+    const defaults = getDefaultPreferences(userId);
+    await esClient.index({
+      index: 'user-preferences',
+      id: userId,
+      body: defaults
+    });
+    return res.json(defaults);
+  }
+  
+  return res.json(prefs._source);
+};
+```
+
+**Validation:**
+- First login should auto-create default preferences
+- Subsequent logins should retrieve saved preferences
+
+---
+
+### **PHASE 3: Frontend Authentication UI**
+
+#### Milestone 3.1: Auth Service & HTTP Interceptor
+**Estimated Time:** 3-4 hours  
+**Dependencies:** Milestone 1.3  
+**Deliverables:**
+- AuthService with login/logout/register methods
+- HTTP interceptor for JWT tokens
+- Auth state management
+
+**Tasks:**
+1. Create `frontend/src/app/core/services/auth.service.ts`:
+```typescript
+@Injectable({ providedIn: 'root' })
+export class AuthService {
+  private currentUserSubject = new BehaviorSubject<User | null>(null);
+  public currentUser$ = this.currentUserSubject.asObservable();
+  
+  private tokenKey = 'auth_token';
+  
+  constructor(private http: HttpClient) {
+    this.checkStoredToken();
+  }
+  
+  login(email: string, password: string): Observable<User> {
+    return this.http.post<{user: User, token: string}>(
+      `${environment.apiUrl}/auth/login`,
+      { email, password }
+    ).pipe(
+      tap(response => {
+        this.setToken(response.token);
+        this.currentUserSubject.next(response.user);
+      }),
+      map(response => response.user)
+    );
+  }
+  
+  logout(): void {
+    this.removeToken();
+    this.currentUserSubject.next(null);
+    // Optional: Call backend logout endpoint
+  }
+  
+  register(email: string, password: string, displayName: string): Observable<void> {
+    return this.http.post<void>(
+      `${environment.apiUrl}/auth/register`,
+      { email, password, displayName }
+    );
+  }
+  
+  getCurrentUser(): Observable<User> {
+    return this.http.get<User>(`${environment.apiUrl}/auth/me`);
+  }
+  
+  isAuthenticated(): boolean {
+    return !!this.getToken() && !!this.currentUserSubject.value;
+  }
+  
+  private setToken(token: string): void {
+    localStorage.setItem(this.tokenKey, token);
+  }
+  
+  private getToken(): string | null {
+    return localStorage.getItem(this.tokenKey);
+  }
+  
+  private removeToken(): void {
+    localStorage.removeItem(this.tokenKey);
+  }
+  
+  private checkStoredToken(): void {
+    const token = this.getToken();
+    if (token) {
+      // Verify token is still valid
+      this.getCurrentUser().subscribe({
+        next: user => this.currentUserSubject.next(user),
+        error: () => this.removeToken()
+      });
+    }
+  }
+}
+```
+
+2. Create `frontend/src/app/core/interceptors/auth.interceptor.ts`:
+```typescript
+@Injectable()
+export class AuthInterceptor implements HttpInterceptor {
+  constructor(private auth: AuthService) {}
+  
+  intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    const token = localStorage.getItem('auth_token');
+    
+    if (token) {
+      req = req.clone({
+        setHeaders: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+    }
+    
+    return next.handle(req);
+  }
+}
+```
+
+3. Register interceptor in `app.module.ts`:
+```typescript
+providers: [
+  {
+    provide: HTTP_INTERCEPTORS,
+    useClass: AuthInterceptor,
+    multi: true
+  }
+]
+```
+
+**Validation:**
+- All HTTP requests should include Authorization header when logged in
+- Token persists in localStorage across page refreshes
+
+---
+
+#### Milestone 3.2: Login/Register Pages
+**Estimated Time:** 4-6 hours  
+**Dependencies:** Milestone 3.1  
+**Deliverables:**
+- Login page UI
+- Register page UI
+- Form validation
+- Error handling
+
+**Tasks:**
+1. Create `frontend/src/app/features/auth/pages/login/login.component.ts`:
+```typescript
+@Component({
+  selector: 'app-login',
+  template: `
+    <div class="login-container">
+      <h2>Login to Transportation Portal</h2>
+      
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+        <div class="form-field">
+          <label>Email</label>
+          <input formControlName="email" type="email" />
+          <span *ngIf="email?.invalid && email?.touched">
+            Valid email required
+          </span>
+        </div>
+        
+        <div class="form-field">
+          <label>Password</label>
+          <input formControlName="password" type="password" />
+          <span *ngIf="password?.invalid && password?.touched">
+            Password required
+          </span>
+        </div>
+        
+        <div class="form-error" *ngIf="error">{{ error }}</div>
+        
+        <button type="submit" [disabled]="loginForm.invalid || loading">
+          {{ loading ? 'Logging in...' : 'Login' }}
+        </button>
+      </form>
+      
+      <p>Don't have an account? <a routerLink="/register">Register</a></p>
+    </div>
+  `
+})
+export class LoginComponent {
+  loginForm: FormGroup;
+  loading = false;
+  error: string | null = null;
+  
+  constructor(
+    private fb: FormBuilder,
+    private auth: AuthService,
+    private router: Router
+  ) {
+    this.loginForm = this.fb.group({
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', Validators.required]
+    });
+  }
+  
+  onSubmit(): void {
+    if (this.loginForm.invalid) return;
+    
+    this.loading = true;
+    this.error = null;
+    
+    const { email, password } = this.loginForm.value;
+    
+    this.auth.login(email, password).subscribe({
+      next: () => {
+        this.router.navigate(['/search']);
+      },
+      error: (err) => {
+        this.error = 'Invalid email or password';
+        this.loading = false;
+      }
+    });
+  }
+  
+  get email() { return this.loginForm.get('email'); }
+  get password() { return this.loginForm.get('password'); }
+}
+```
+
+2. Create similar `register.component.ts` with:
+   - Email, password, confirm password, display name fields
+   - Password strength validation
+   - Password match validation
+
+3. Add routes in `app-routing.module.ts`:
+```typescript
+const routes: Routes = [
+  { path: 'login', component: LoginComponent },
+  { path: 'register', component: RegisterComponent },
+  // ... existing routes
+];
+```
+
+**Validation:**
+- Can register new account
+- Can login with registered credentials
+- Invalid credentials show error message
+- After login, redirects to /search
+
+---
+
+#### Milestone 3.3: Auth Guard for Protected Routes
+**Estimated Time:** 2-3 hours  
+**Dependencies:** Milestone 3.2  
+**Deliverables:**
+- AuthGuard implementation
+- Redirect to login when not authenticated
+- Return URL preservation
+
+**Tasks:**
+1. Create `frontend/src/app/core/guards/auth.guard.ts`:
+```typescript
+@Injectable({ providedIn: 'root' })
+export class AuthGuard implements CanActivate {
+  constructor(
+    private auth: AuthService,
+    private router: Router
+  ) {}
+  
+  canActivate(route: ActivatedRouteSnapshot): boolean {
+    if (this.auth.isAuthenticated()) {
+      return true;
+    }
+    
+    // Save intended URL for redirect after login
+    const returnUrl = route.url.map(segment => segment.path).join('/');
+    
+    this.router.navigate(['/login'], {
+      queryParams: { returnUrl }
+    });
+    
+    return false;
+  }
+}
+```
+
+2. Update routes to require authentication:
+```typescript
+const routes: Routes = [
+  { path: 'login', component: LoginComponent },
+  { path: 'register', component: RegisterComponent },
+  { 
+    path: 'search', 
+    component: SearchPageComponent,
+    canActivate: [AuthGuard]  // Protected
+  },
+  { 
+    path: 'aircraft/:id', 
+    component: AircraftDetailComponent,
+    canActivate: [AuthGuard]  // Protected
+  },
+  // ... other routes
+];
+```
+
+3. Update login component to handle returnUrl:
+```typescript
+onSubmit(): void {
+  this.auth.login(email, password).subscribe({
+    next: () => {
+      const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/search';
+      this.router.navigate([returnUrl]);
+    }
+  });
+}
+```
+
+**Validation:**
+- Navigating to /search when not logged in redirects to /login
+- After login, returns to originally requested page
+- Logged-in users can access all routes
+
+---
+
+### **PHASE 4: Frontend Preferences Integration**
+
+#### Milestone 4.1: Preferences Service
+**Estimated Time:** 3-4 hours  
+**Dependencies:** Milestone 2.2, 3.1  
+**Deliverables:**
+- PreferencesService
+- Automatic load on login
+- Sync preferences to server
+
+**Tasks:**
+1. Create `frontend/src/app/core/services/preferences.service.ts`:
+```typescript
+@Injectable({ providedIn: 'root' })
+export class PreferencesService {
+  private preferencesSubject = new BehaviorSubject<UserPreferences | null>(null);
+  public preferences$ = this.preferencesSubject.asObservable();
+  
+  constructor(
+    private http: HttpClient,
+    private auth: AuthService
+  ) {
+    // Load preferences when user logs in
+    this.auth.currentUser$.pipe(
+      switchMap(user => {
+        if (user) {
+          return this.loadPreferences();
+        } else {
+          this.preferencesSubject.next(null);
+          return of(null);
+        }
+      })
+    ).subscribe();
+  }
+  
+  loadPreferences(): Observable<UserPreferences> {
+    return this.http.get<UserPreferences>(
+      `${environment.apiUrl}/preferences/me`
+    ).pipe(
+      tap(prefs => this.preferencesSubject.next(prefs))
+    );
+  }
+  
+  updatePreferences(updates: Partial<UserPreferences>): Observable<UserPreferences> {
+    const current = this.preferencesSubject.value;
+    const updated = { ...current, ...updates };
+    
+    return this.http.put<UserPreferences>(
+      `${environment.apiUrl}/preferences/me`,
+      updated
+    ).pipe(
+      tap(prefs => this.preferencesSubject.next(prefs))
+    );
+  }
+  
+  saveSearch(name: string, filters: SearchFilters): Observable<void> {
+    return this.http.post<void>(
+      `${environment.apiUrl}/preferences/me/saved-searches`,
+      { name, filters }
+    ).pipe(
+      switchMap(() => this.loadPreferences()),
+      map(() => undefined)
+    );
+  }
+  
+  deleteSavedSearch(searchId: string): Observable<void> {
+    return this.http.delete<void>(
+      `${environment.apiUrl}/preferences/me/saved-searches/${searchId}`
+    ).pipe(
+      switchMap(() => this.loadPreferences()),
+      map(() => undefined)
+    );
+  }
+}
+```
+
+2. Update `StateManagementService` to use preferences:
+```typescript
+constructor(
+  private routeState: RouteStateService,
+  private preferences: PreferencesService
+) {
+  // Initialize state with preferences
+  combineLatest([
+    this.routeState.queryParams$,
+    this.preferences.preferences$
+  ]).pipe(
+    map(([params, prefs]) => {
+      const urlFilters = this.routeState.paramsToFilters(params);
+      const defaultFilters = {
+        page: 1,
+        size: prefs?.defaultPageSize || 20,
+        sort: prefs?.defaultSort?.field || 'year',
+        sortOrder: prefs?.defaultSort?.order || 'desc'
+      };
+      
+      // URL params override preferences
+      return { ...defaultFilters, ...urlFilters };
+    })
+  ).subscribe(filters => {
+    this.updateFilters(filters);
+  });
+}
+```
+
+**Validation:**
+- Login automatically loads preferences
+- Preferences from server override local defaults
+- URL parameters still override preferences
+
+---
+
+#### Milestone 4.2: Preferences UI Components
+**Estimated Time:** 4-6 hours  
+**Dependencies:** Milestone 4.1  
+**Deliverables:**
+- User menu dropdown
+- Preferences modal/page
+- Save search functionality
+- Recent searches display
+
+**Tasks:**
+1. Create user menu component:
+```typescript
+@Component({
+  selector: 'app-user-menu',
+  template: `
+    <div class="user-menu" *ngIf="currentUser$ | async as user">
+      <button nz-dropdown [nzDropdownMenu]="menu">
+        {{ user.displayName }}
+        <i nz-icon nzType="down"></i>
+      </button>
+      <nz-dropdown-menu #menu="nzDropdownMenu">
+        <ul nz-menu>
+          <li nz-menu-item (click)="openPreferences()">
+            <i nz-icon nzType="setting"></i> Preferences
+          </li>
+          <li nz-menu-item (click)="logout()">
+            <i nz-icon nzType="logout"></i> Logout
+          </li>
+        </ul>
+      </nz-dropdown-menu>
+    </div>
+  `
+})
+export class UserMenuComponent {
+  currentUser$ = this.auth.currentUser$;
+  
+  constructor(
+    private auth: AuthService,
+    private router: Router
+  ) {}
+  
+  openPreferences(): void {
+    this.router.navigate(['/preferences']);
+  }
+  
+  logout(): void {
+    this.auth.logout();
+    this.router.navigate(['/login']);
+  }
+}
+```
+
+2. Create preferences page:
+```typescript
+@Component({
+  selector: 'app-preferences',
+  template: `
+    <div class="preferences-page">
+      <h2>User Preferences</h2>
+      
+      <form [formGroup]="prefsForm" (ngSubmit)="onSave()">
+        <nz-form-item>
+          <nz-form-label>Default Page Size</nz-form-label>
+          <nz-select formControlName="defaultPageSize">
+            <nz-option [nzValue]="20" nzLabel="20"></nz-option>
+            <nz-option [nzValue]="50" nzLabel="50"></nz-option>
+            <nz-option [nzValue]="100" nzLabel="100"></nz-option>
+          </nz-select>
+        </nz-form-item>
+        
+        <nz-form-item>
+          <nz-form-label>Theme</nz-form-label>
+          <nz-radio-group formControlName="theme">
+            <label nz-radio nzValue="light">Light</label>
+            <label nz-radio nzValue="dark">Dark</label>
+          </nz-radio-group>
+        </nz-form-item>
+        
+        <nz-form-item>
+          <nz-form-label>Default View</nz-form-label>
+          <nz-radio-group formControlName="defaultView">
+            <label nz-radio nzValue="table">Table</label>
+            <label nz-radio nzValue="cards">Cards</label>
+          </nz-radio-group>
+        </nz-form-item>
+        
+        <button nz-button nzType="primary" [nzLoading]="saving">
+          Save Preferences
+        </button>
+      </form>
+      
+      <h3>Saved Searches</h3>
+      <nz-list [nzDataSource]="savedSearches$ | async" nzBordered>
+        <nz-list-item *ngFor="let search of savedSearches$ | async">
+          <span>{{ search.name }}</span>
+          <button nz-button (click)="loadSearch(search)">Load</button>
+          <button nz-button nzDanger (click)="deleteSearch(search.id)">Delete</button>
+        </nz-list-item>
+      </nz-list>
+    </div>
+  `
+})
+export class PreferencesComponent implements OnInit {
+  prefsForm: FormGroup;
+  saving = false;
+  savedSearches$ = this.prefsService.preferences$.pipe(
+    map(prefs => prefs?.savedSearches || [])
+  );
+  
+  constructor(
+    private fb: FormBuilder,
+    private prefsService: PreferencesService,
+    private router: Router
+  ) {
+    this.prefsForm = this.fb.group({
+      defaultPageSize: [20],
+      theme: ['light'],
+      defaultView: ['table']
+    });
+  }
+  
+  ngOnInit(): void {
+    this.prefsService.preferences$.subscribe(prefs => {
+      if (prefs) {
+        this.prefsForm.patchValue(prefs);
+      }
+    });
+  }
+  
+  onSave(): void {
+    this.saving = true;
+    this.prefsService.updatePreferences(this.prefsForm.value).subscribe({
+      next: () => {
+        this.saving = false;
+        // Show success message
+      },
+      error: () => {
+        this.saving = false;
+        // Show error message
+      }
+    });
+  }
+  
+  loadSearch(search: SavedSearch): void {
+    this.router.navigate(['/search'], {
+      queryParams: search.filters
+    });
+  }
+  
+  deleteSearch(searchId: string): void {
+    this.prefsService.deleteSavedSearch(searchId).subscribe();
+  }
+}
+```
+
+3. Add "Save Search" button to search page:
+```typescript
+onSaveSearch(): void {
+  const name = prompt('Enter a name for this search:');
+  if (name) {
+    const filters = this.stateService.getCurrentFilters();
+    this.prefsService.saveSearch(name, filters).subscribe({
+      next: () => {
+        // Show success message
+      }
+    });
+  }
+}
+```
+
+**Validation:**
+- User menu shows in header when logged in
+- Preferences page displays current preferences
+- Changes save to server
+- Saved searches persist across sessions
+
+---
+
+#### Milestone 4.3: Apply Preferences on Login
+**Estimated Time:** 2-3 hours  
+**Dependencies:** Milestone 4.2  
+**Deliverables:**
+- Automatic preference application
+- Theme switching
+- Default filters from preferences
+
+**Tasks:**
+1. Update APP_INITIALIZER to load preferences:
+```typescript
+export function initializeApp(
+  auth: AuthService,
+  preferences: PreferencesService
+): () => Promise<void> {
+  return () => {
+    return new Promise((resolve) => {
+      // Check if user has stored token
+      const token = localStorage.getItem('auth_token');
+      
+      if (token) {
+        // Verify token and load user
+        auth.getCurrentUser().pipe(
+          switchMap(user => {
+            // Load preferences after user verified
+            return preferences.loadPreferences();
+          })
+        ).subscribe({
+          next: () => resolve(),
+          error: () => {
+            // Token invalid, clear and continue
+            auth.logout();
+            resolve();
+          }
+        });
+      } else {
+        resolve();
+      }
+    });
+  };
+}
+```
+
+2. Create theme service:
+```typescript
+@Injectable({ providedIn: 'root' })
+export class ThemeService {
+  constructor(private preferences: PreferencesService) {
+    this.preferences.preferences$.subscribe(prefs => {
+      if (prefs) {
+        this.applyTheme(prefs.theme);
+      }
+    });
+  }
+  
+  applyTheme(theme: 'light' | 'dark'): void {
+    document.body.setAttribute('data-theme', theme);
+    // Or load different stylesheet
+  }
+}
+```
+
+3. Apply default filters from preferences:
+```typescript
+// In StateManagementService
+private getDefaultFilters(): SearchFilters {
+  const prefs = this.preferences.getCurrentPreferences();
+  
+  return {
+    page: 1,
+    size: prefs?.defaultPageSize || 20,
+    sort: prefs?.defaultSort?.field || 'year',
+    sortOrder: prefs?.defaultSort?.order || 'desc'
+  };
+}
+```
+
+**Validation:**
+- After login, theme applies immediately
+- Default page size from preferences
+- Default sort order from preferences
+- Works on fresh login from different device
+
+---
+
+### **PHASE 5: Testing & Polish**
+
+#### Milestone 5.1: Cross-Device Testing
+**Estimated Time:** 2-4 hours  
+**Dependencies:** All previous milestones  
+**Deliverables:**
+- Test matrix
+- Bug fixes
+
+**Test Scenarios:**
+1. **Device A → Device B:**
+   - Login on computer A
+   - Change preferences (page size = 100, theme = dark)
+   - Logout
+   - Login on computer B
+   - Verify: page size = 100, theme = dark
+
+2. **Cache Clear:**
+   - Login and set preferences
+   - Clear browser cache and cookies
+   - Login again
+   - Verify: all preferences restored
+
+3. **Different Browser:**
+   - Set preferences in Chrome
+   - Login in Firefox
+   - Verify: same preferences
+
+4. **Saved Searches:**
+   - Save 3 searches on device A
+   - Login on device B
+   - Verify: all 3 saved searches available
+   - Load saved search
+   - Verify: correct filters applied
+
+5. **Logout/Login Cycle:**
+   - Set preferences
+   - Logout
+   - Login
+   - Verify: preferences persist
+
+**Create test document:**
+```markdown
+# Preferences Test Matrix
+
+## Test Case 1: Cross-Device Persistence
+- [ ] Set preferences on Device A
+- [ ] Login on Device B
+- [ ] Verify preferences match
+
+## Test Case 2: Cache Clear
+- [ ] Set preferences
+- [ ] Clear all browser data
+- [ ] Login again
+- [ ] Verify preferences restored
+
+[... more test cases ...]
+```
+
+---
+
+#### Milestone 5.2: Error Handling & Edge Cases
+**Estimated Time:** 2-3 hours  
+**Dependencies:** Milestone 5.1  
+**Deliverables:**
+- Graceful degradation
+- Error messages
+- Loading states
+
+**Tasks:**
+1. Handle preferences load failure:
+```typescript
+loadPreferences(): Observable<UserPreferences> {
+  return this.http.get<UserPreferences>('/api/v1/preferences/me').pipe(
+    catchError(error => {
+      console.error('Failed to load preferences:', error);
+      // Use default preferences
+      return of(this.getDefaultPreferences());
+    })
+  );
+}
+```
+
+2. Handle save failure:
+```typescript
+onSave(): void {
+  this.prefsService.updatePreferences(this.prefsForm.value).subscribe({
+    error: (err) => {
+      this.notification.error(
+        'Failed to Save',
+        'Your preferences could not be saved. Please try again.'
+      );
+    }
+  });
+}
+```
+
+3. Add loading states:
+```typescript
+<div *ngIf="(preferences$ | async) === null">
+  <nz-spin nzTip="Loading preferences..."></nz-spin>
+</div>
+```
+
+**Validation:**
+- App continues to work if preferences API fails
+- User sees helpful error messages
+- Loading spinners show during operations
+
+---
+
+#### Milestone 5.3: Documentation & Deployment
+**Estimated Time:** 2-3 hours  
+**Dependencies:** All previous milestones  
+**Deliverables:**
+- User documentation
+- API documentation
+- Deployment guide
+
+**Tasks:**
+1. Create user guide:
+```markdown
+# User Guide: Preferences
+
+## Setting Your Preferences
+1. Click your name in the top-right corner
+2. Select "Preferences"
+3. Adjust settings
+4. Click "Save Preferences"
+
+## Saved Searches
+...
+```
+
+2. Update API documentation:
+```markdown
+# Preferences API
+
+## GET /api/v1/preferences/me
+Returns current user's preferences
+
+## PUT /api/v1/preferences/me
+Updates user preferences
+
+[... detailed docs ...]
+```
+
+3. Create deployment checklist:
+```markdown
+# Deployment Checklist
+
+Backend:
+- [ ] Create Elasticsearch indices
+- [ ] Set JWT_SECRET environment variable
+- [ ] Deploy updated backend (v2.0.0)
+- [ ] Verify auth endpoints working
+
+Frontend:
+- [ ] Update environment.apiUrl
+- [ ] Build production bundle
+- [ ] Deploy to Kubernetes
+- [ ] Verify login flow working
+```
+
+---
+
+## Summary Timeline
+
+| Phase | Milestones | Estimated Time | Dependencies |
+|-------|-----------|----------------|--------------|
+| **Phase 1: Backend Auth** | 3 milestones | 8-13 hours | None |
+| **Phase 2: Preferences Backend** | 2 milestones | 4-6 hours | Phase 1 |
+| **Phase 3: Frontend Auth UI** | 3 milestones | 9-13 hours | Phase 1 |
+| **Phase 4: Preferences Integration** | 3 milestones | 9-13 hours | Phases 2 & 3 |
+| **Phase 5: Testing & Polish** | 3 milestones | 6-10 hours | All phases |
+| **TOTAL** | **14 milestones** | **36-55 hours** | - |
+
+**Estimated Calendar Time:** 5-7 working days (assuming ~8 hours/day)
+
+---
+
+## Critical Success Factors
+
+### Must-Have Features
+1. ✅ Secure authentication (JWT + bcrypt)
+2. ✅ Preferences stored server-side (Elasticsearch)
+3. ✅ Automatic preference loading on login
+4. ✅ Cross-device/browser persistence
+5. ✅ Graceful degradation if preferences fail to load
+
+### Nice-to-Have Features
+- Email verification
+- Password reset flow
+- Remember me checkbox
+- Session timeout
+- Activity logging
+
+---
+
+## Deployment Strategy
+
+### Development
+1. Develop on `feature/user-authentication` branch
+2. Test locally with Thor Elasticsearch
+3. Merge to `main` when complete
+
+### Production
+1. Create Elasticsearch indices on production cluster
+2. Deploy backend with JWT_SECRET environment variable
+3. Deploy frontend with auth UI
+4. Create initial admin user manually
+5. Test login/preferences flow
+6. Enable for all users
+
+---
+
+## Rollback Plan
+
+If issues arise:
+1. Backend can run without auth (make routes optional)
+2. Frontend can operate without login (remove AuthGuard)
+3. Preferences can fall back to localStorage temporarily
+4. Full rollback: revert to previous deployment version
+
+---
+
+## Next Steps
+
+**To begin implementation:**
+
+1. Review this roadmap with team
+2. Create GitLab epic: "User Authentication & Preferences"
+3. Create GitLab issues for each milestone
+4. Assign developers
+5. Set up development environment
+6. Start with Phase 1, Milestone 1.1
+
+**Estimated Start Date:** When team is ready  
+**Target Completion:** 1-2 weeks after start

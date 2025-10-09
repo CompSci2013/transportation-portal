@@ -1,0 +1,299 @@
+# Transportation Portal - Session Summaries Index
+
+**Last Updated:** October 9, 2025  
+**Project:** Transportation Portal (Aircraft Registry)
+
+This document provides an index of all development session summaries, their current status, and links to related documentation.
+
+---
+
+## Table of Contents
+
+1. [Active Sessions](#active-sessions)
+2. [Completed Sessions](#completed-sessions)
+3. [Related Documentation](#related-documentation)
+4. [How to Use This Index](#how-to-use-this-index)
+
+---
+
+## Active Sessions
+
+### No Active Sessions
+All documented sessions have reached completion or been superseded by newer implementations.
+
+---
+
+## Completed Sessions
+
+### 1. ETL Pipeline Implementation
+**File:** `etl/SESSION_SUMMARY.txt`  
+**Date:** Not specified (Initial implementation)  
+**Status:** ✅ **COMPLETED** - Production Ready
+
+**Summary:**
+- Built complete Python ETL pipeline for FAA aircraft data
+- Implemented Pydantic data models for unified transport schema
+- Created extractor, transformer, and loader components
+- Successfully loaded 4,607 aircraft records (100% success rate)
+- Full dataset of ~300,000 records downloaded and ready
+
+**Key Achievements:**
+- Elasticsearch bulk loading at ~42,000 docs/second
+- Unified data model (PlaneTransport, AutomobileTransport ready)
+- Containerized in Podman with volume mounts
+- Production-ready with error handling and logging
+
+**Technologies:**
+- Python 3.11, Pydantic, Pandas, Elasticsearch client
+- Podman container deployment
+- FAA ReleasableAircraft.zip source data
+
+**Related Files:**
+- `etl/run_etl.py` - Pipeline orchestrator
+- `etl/models/` - Pydantic data models
+- `etl/create_indices.py` - Elasticsearch index setup
+
+**Current State:** Operational and loading data into `transport-unified` index
+
+---
+
+### 2. PrimeNG to NG-ZORRO Migration
+**File:** `docs/SESSION-FORK-DESCISION.md`  
+**Date:** October 5, 2025  
+**Branch:** `feature/ng-zorro-migration`  
+**Status:** ✅ **COMPLETED** - Migration Successful
+
+**Original Goal:**
+Evaluate and potentially migrate from PrimeNG to NG-ZORRO due to licensing concerns.
+
+**Summary:**
+- Discovered PrimeNG 13.4.x requires commercial license ($590/year)
+- Researched NG-ZORRO as MIT-licensed alternative
+- Evaluated risk, community health, and corporate backing
+- Successfully migrated entire table component to NG-ZORRO
+- Removed all PrimeNG dependencies
+
+**Key Decisions:**
+- **Decision:** Migrate to NG-ZORRO (Ant Design for Angular)
+- **Rationale:** MIT license, Alibaba backing, active development
+- **Risk Assessment:** Low risk of license change due to corporate use
+- **Result:** Successful migration, better visual design
+
+**Technologies Changed:**
+- **Removed:** PrimeNG 13.4.5-lts
+- **Added:** ng-zorro-antd 13.4.0
+- **Impacted:** Results table, form inputs, buttons, UI components
+
+**Related Changes:**
+- Complete table component rewrite (`results-table.component.ts/html`)
+- Updated module imports in `app.module.ts`
+- Consistent Ant Design aesthetic across application
+
+**Current State:** NG-ZORRO in production (v1.0.7), no licensing issues
+
+---
+
+### 3. Server-Side Column Filtering Implementation
+**File:** `docs/SESSION-FORK-DESCISION.md` (same session as migration)  
+**Date:** October 5, 2025  
+**Backend Version:** v1.0.4  
+**Status:** ✅ **COMPLETED** - Fully Functional
+
+**Summary:**
+- Implemented server-side column filtering for all table columns
+- Added 7 filter parameters to backend API
+- Integrated filters with URL state management
+- Implemented 500ms debounce on filter inputs
+- Filters work seamlessly with sorting and pagination
+
+**Architecture Decision:**
+Chose **server-side filtering** over client-side due to:
+- Incompatibility of PrimeNG client filters with server pagination
+- State conflicts between client and server
+- Scalability for large datasets (300k+ records)
+- Consistency with existing sorting pattern
+
+**Technical Implementation:**
+
+**Backend (`searchController.js`):**
+- Wildcard filtering for text fields (case-insensitive)
+- Numeric range filtering for year fields
+- All filters added to Elasticsearch `must` clause (AND logic)
+
+**Frontend:**
+- Extended `SearchFilters` model with filter properties
+- URL serialization via `RouteStateService` (short params: fReg, fMfr, etc.)
+- Debounced filter inputs using RxJS Subject
+- Filter state persistence in URL
+
+**Filter Parameters:**
+```typescript
+filterRegistration  // Registration ID
+filterManufacturer  // Manufacturer name
+filterModel         // Model name
+filterYearMin       // Minimum year
+filterYearMax       // Maximum year
+filterCategory      // Aircraft category/type
+filterState         // State/province
+```
+
+**Current State:** Production-ready, filters working with all features
+
+---
+
+### 4. Sorting Implementation
+**File:** `docs/SESSION-SUMMARY-sorting-implementation.md` (if exists)  
+**Date:** Not specified  
+**Status:** ✅ **COMPLETED** - Fully Functional
+
+**Summary:**
+Server-side sorting implementation for all table columns.
+
+**Features:**
+- Sort by: registration, manufacturer, model, year, category, state
+- Ascending/descending order
+- Sort state preserved in URL
+- Works with pagination and filtering
+
+**Current State:** Production-ready in v1.0.7
+
+---
+
+## Related Documentation
+
+### Architecture & Design
+- [`conceptual-architecture.md`](conceptual-architecture.md) - Unified transport schema design
+- [`design-checklist.md`](design-checklist.md) - Enterprise Angular patterns reference
+- [`implementation-status.md`](implementation-status.md) - **CURRENT ARCHITECTURE**
+- [`development-philosophy.md`](development-philosophy.md) - Halo Labs container-first approach
+
+### Operational
+- [`POST-REBOOT-CHECKLIST.md`](POST-REBOOT-CHECKLIST.md) - System recovery procedures
+- [`dev_server_startup.txt`](dev_server_startup.txt) - Development server startup guide
+- [`Troubleshoot.md`](Troubleshoot.md) - Common issues and solutions
+
+### Planning & Requirements
+- [`docs/reqs/`](reqs/) - Change requests and requirements
+- [`docs/storyboard/`](storyboard/) - Feature storyboards
+- [`docs/prompts/`](prompts/) - AI assistant prompts archive
+
+---
+
+## How to Use This Index
+
+### For New Team Members
+1. Start with [`implementation-status.md`](implementation-status.md) for current architecture
+2. Read [`development-philosophy.md`](development-philosophy.md) to understand deployment approach
+3. Review completed sessions to understand why decisions were made
+4. Follow [`POST-REBOOT-CHECKLIST.md`](POST-REBOOT-CHECKLIST.md) to set up environment
+
+### For Ongoing Development
+1. Check this index for historical context on features
+2. Reference session summaries when modifying related code
+3. Create new session summaries for major features or decisions
+4. Update this index when completing new work
+
+### Session Summary Template
+When creating a new session summary, include:
+- **Date and branch**
+- **Goal and context**
+- **Technical decisions and rationale**
+- **What was implemented**
+- **Current status**
+- **Related files and documentation**
+
+---
+
+## GitLab Issues Timeline
+
+### Completed
+- ✅ Server-side column filtering (Oct 5, 2025)
+- ✅ NG-ZORRO migration (Oct 5, 2025)
+- ✅ Server-side sorting (Date unknown)
+- ✅ Manufacturer-state picker (Date unknown)
+- ✅ Grouped table view (Date unknown)
+
+### In Progress (Table UX Polish - CR-2025-002)
+- 🔄 **#3** - Clear All Filters Button
+- 🔄 **#2** - Add global search box to results table
+- 🔄 **#4** - Add visual indicators for active column filters
+- 🔄 **#5** - Enhance filter input visual design
+
+### Future
+- 🔲 Authentication system
+- 🔲 User preferences backend API
+- 🔲 Aircraft detail page
+- 🔲 Statistics dashboard page
+- 🔲 NHTSA automobile data ETL
+- 🔲 Export functionality (CSV, JSON)
+
+---
+
+## Version History
+
+### v1.0.7 (Current - Oct 9, 2025)
+- NG-ZORRO UI components
+- Server-side column filtering
+- Manufacturer-state combination picker
+- Grouped/flat table view toggle
+- Pagination, sorting, filtering all working
+
+### v1.0.4 (Oct 5, 2025)
+- Server-side column filters added to backend
+- PrimeNG still in use (pre-migration)
+
+### v1.0.0 (Initial Release)
+- Basic search functionality
+- ETL pipeline operational
+- Elasticsearch integration
+- Kubernetes deployment
+
+---
+
+## Notes
+
+### Session Documentation Standards
+- **File naming:** `SESSION-SUMMARY-<feature-name>.md`
+- **Location:** `docs/` or `docs/archive/sessions/`
+- **Format:** Markdown with clear sections
+- **Required sections:** Summary, Status, Key Decisions, Current State
+- **Update this index** when adding new session summaries
+
+### Archiving Policy
+- Keep completed session summaries in `docs/` for 6 months
+- Move to `docs/archive/sessions/` after 6 months
+- Update index with archive location
+- Never delete session summaries (valuable historical record)
+
+### Cross-Referencing
+Session summaries should reference:
+- Related GitLab issues
+- Related change requests (CR-YYYY-NNN)
+- Modified files and components
+- Dependent or follow-up work
+
+---
+
+## Quick Links
+
+| Document | Purpose | Status |
+|----------|---------|--------|
+| [ETL Summary](../etl/SESSION_SUMMARY.txt) | ETL pipeline implementation | ✅ Complete |
+| [Migration Decision](SESSION-FORK-DESCISION.md) | PrimeNG → NG-ZORRO | ✅ Complete |
+| [Implementation Status](implementation-status.md) | Current architecture | 📄 Current |
+| [Design Checklist](design-checklist.md) | Pattern reference | 📘 Reference |
+| [Reboot Checklist](POST-REBOOT-CHECKLIST.md) | Operations | 🔧 Operational |
+
+---
+
+**Legend:**
+- ✅ Completed
+- 🔄 In Progress
+- 🔲 Planned
+- 📄 Current Documentation
+- 📘 Reference Material
+- 🔧 Operational Guide
+
+---
+
+*Last Updated: October 9, 2025 by Claude (Documentation Review Session)*
