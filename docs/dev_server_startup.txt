@@ -1,0 +1,323 @@
+# Development Server Startup Guide
+
+This guide provides the step-by-step commands to start the Angular development server for the Transportation Portal frontend.
+
+---
+
+## Prerequisites
+
+- Docker installed and running
+- Source code in `/path/to/transport-portal-frontend` (adjust paths as needed)
+- Ports 4200 available on host machine
+
+---
+
+## Startup Sequence
+
+### Step 1: Check if Container Image Exists
+
+**Server:** Local development machine
+
+**Command:**
+```bash
+docker images | grep transport-frontend-dev
+```
+
+**Explanation:**  
+Lists all Docker images and filters for our development image named `transport-frontend-dev`. If the command returns no results, the image doesn't exist and needs to be built.
+
+---
+
+### Step 2: Build Container Image (if it doesn't exist)
+
+**Server:** Local development machine
+
+**Command:**
+```bash
+cd /path/to/transport-portal-frontend
+docker build -f Dockerfile.dev -t transport-frontend-dev:latest .
+```
+
+**Explanation:**
+- `cd` - Changes to the frontend project directory
+- `docker build` - Builds a Docker image
+- `-f Dockerfile.dev` - Specifies the Dockerfile for development (includes Angular CLI 13)
+- `-t transport-frontend-dev:latest` - Tags the image with name and version
+- `.` - Uses current directory as build context
+
+**What this does:**  
+Creates a Docker image based on `node:18-alpine` with Angular CLI 13 pre-installed. This image will be reused for future development sessions.
+
+---
+
+### Step 3: Check if Container is Running
+
+**Server:** Local development machine
+
+**Command:**
+```bash
+docker ps | grep transport-frontend-dev
+```
+
+**Explanation:**  
+Lists all running containers and filters for our development container. If the command returns no results, the container is not running.
+
+---
+
+### Step 4: Check if Container Exists but is Stopped
+
+**Server:** Local development machine
+
+**Command:**
+```bash
+docker ps -a | grep transport-frontend-dev
+```
+
+**Explanation:**
+- `docker ps -a` - Lists ALL containers (running and stopped)
+- `grep transport-frontend-dev` - Filters for our container
+
+**What this does:**  
+Shows if a container exists in a stopped state. If it exists, we can restart it. If not, we need to create a new one.
+
+---
+
+### Step 5a: Start Existing Container (if stopped)
+
+**Server:** Local development machine
+
+**Command:**
+```bash
+docker start transport-frontend-dev
+```
+
+**Explanation:**  
+Restarts a previously created but stopped container. This is faster than creating a new container.
+
+---
+
+### Step 5b: Create and Start New Container (if doesn't exist)
+
+**Server:** Local development machine
+
+**Command:**
+```bash
+cd /path/to/transport-portal-frontend
+docker run -d \
+  --name transport-frontend-dev \
+  -v "$(pwd):/app" \
+  -p 4200:4200 \
+  transport-frontend-dev:latest
+```
+
+**Explanation:**
+- `docker run` - Creates and starts a new container
+- `-d` - Runs in detached mode (background)
+- `--name transport-frontend-dev` - Names the container for easy reference
+- `-v "$(pwd):/app"` - Mounts current directory to `/app` in container (enables live reload)
+- `-p 4200:4200` - Maps port 4200 from container to host (Angular dev server default)
+- `transport-frontend-dev:latest` - Uses the image we built earlier
+
+**What this does:**  
+Creates a container with your source code mounted as a volume, so changes on your host machine are immediately visible inside the container.
+
+---
+
+### Step 6: Verify Container is Running
+
+**Server:** Local development machine
+
+**Command:**
+```bash
+docker ps | grep transport-frontend-dev
+```
+
+**Explanation:**  
+Confirms the container is now running. You should see output showing the container status, ports, and uptime.
+
+---
+
+### Step 7: Install Dependencies (First Time Only)
+
+**Server:** Inside the Docker container
+
+**Command:**
+```bash
+docker exec -it transport-frontend-dev sh -c "cd /app && npm install"
+```
+
+**Explanation:**
+- `docker exec` - Executes a command in a running container
+- `-it` - Interactive terminal mode
+- `transport-frontend-dev` - Target container name
+- `sh -c "..."` - Runs shell command
+- `cd /app && npm install` - Changes to app directory and installs Node.js dependencies
+
+**What this does:**  
+Installs all npm packages defined in `package.json`. This only needs to be run once or when dependencies change.
+
+---
+
+### Step 8: Start Angular Development Server
+
+**Server:** Inside the Docker container
+
+**Command:**
+```bash
+docker exec -it transport-frontend-dev sh -c "cd /app && ng serve --host 0.0.0.0 --poll 2000"
+```
+
+**Explanation:**
+- `ng serve` - Angular CLI command to start development server
+- `--host 0.0.0.0` - Binds to all network interfaces (required for Docker)
+- `--poll 2000` - Enables file watching with 2-second polling interval (required for volume mounts)
+
+**What this does:**  
+Starts the Angular development server with hot-reload enabled. The server will watch for file changes and automatically recompile and refresh the browser.
+
+**Expected Output:**
+```
+✔ Browser application bundle generation complete.
+
+Initial Chunk Files   | Names         |  Raw Size
+vendor.js             | vendor        |   2.50 MB | 
+polyfills.js          | polyfills     | 339.20 kB | 
+styles.css, styles.js | styles        | 179.97 kB | 
+main.js               | main          |  52.25 kB | 
+runtime.js            | runtime       |   6.87 kB | 
+
+                      | Initial Total |   3.06 MB
+
+Build at: 2025-01-10T12:34:56.789Z - Hash: abcd1234ef567890
+** Angular Live Development Server is listening on 0.0.0.0:4200, open your browser on http://localhost:4200/ **
+✔ Compiled successfully.
+```
+
+---
+
+### Step 9: Access the Application
+
+**Server:** Local development machine (browser)
+
+**Command:**
+```bash
+# Open in your default browser
+open http://localhost:4200
+```
+
+Or manually navigate to: **http://localhost:4200**
+
+**What this does:**  
+Opens the Angular application in your browser. Any changes you make to TypeScript, HTML, or SCSS files will automatically trigger a recompile and browser refresh.
+
+---
+
+## Quick Reference: Complete Startup Script
+
+```bash
+#!/bin/bash
+
+# Navigate to project directory
+cd /path/to/transport-portal-frontend
+
+# Check if image exists, build if not
+if [ -z "$(docker images -q transport-frontend-dev:latest 2> /dev/null)" ]; then
+  echo "Building Docker image..."
+  docker build -f Dockerfile.dev -t transport-frontend-dev:latest .
+fi
+
+# Check if container exists
+if [ "$(docker ps -aq -f name=transport-frontend-dev)" ]; then
+  # Container exists, check if it's running
+  if [ "$(docker ps -q -f name=transport-frontend-dev)" ]; then
+    echo "Container is already running"
+  else
+    echo "Starting existing container..."
+    docker start transport-frontend-dev
+  fi
+else
+  # Container doesn't exist, create it
+  echo "Creating new container..."
+  docker run -d \
+    --name transport-frontend-dev \
+    -v "$(pwd):/app" \
+    -p 4200:4200 \
+    transport-frontend-dev:latest
+fi
+
+# Wait a moment for container to be ready
+sleep 2
+
+# Install dependencies (if needed)
+echo "Ensuring dependencies are installed..."
+docker exec -it transport-frontend-dev sh -c "cd /app && npm install"
+
+# Start Angular dev server
+echo "Starting Angular development server..."
+docker exec -it transport-frontend-dev sh -c "cd /app && ng serve --host 0.0.0.0 --poll 2000"
+```
+
+---
+
+## Stopping the Development Server
+
+**To stop ng serve:** Press `Ctrl+C` in the terminal
+
+**To stop the container:**
+```bash
+docker stop transport-frontend-dev
+```
+
+**To remove the container:**
+```bash
+docker stop transport-frontend-dev
+docker rm transport-frontend-dev
+```
+
+**To remove the image:**
+```bash
+docker rmi transport-frontend-dev:latest
+```
+
+---
+
+## Troubleshooting
+
+### Issue: Port 4200 already in use
+**Solution:**
+```bash
+# Find process using port 4200
+lsof -ti:4200
+
+# Kill the process (Mac/Linux)
+kill -9 $(lsof -ti:4200)
+
+# Or use a different port
+ng serve --host 0.0.0.0 --port 4201 --poll 2000
+```
+
+### Issue: Changes not reflecting in browser
+**Solution:**
+- Ensure `--poll 2000` flag is used with `ng serve`
+- Check that volume mount is correct: `-v "$(pwd):/app"`
+- Try hard refresh in browser: `Ctrl+Shift+R` (or `Cmd+Shift+R` on Mac)
+
+### Issue: npm install fails
+**Solution:**
+```bash
+# Clear npm cache and retry
+docker exec -it transport-frontend-dev sh -c "cd /app && npm cache clean --force && npm install"
+```
+
+---
+
+## Next Steps After Startup
+
+Once the development server is running:
+
+1. **Access the application:** http://localhost:4200
+2. **Make code changes** in your IDE on the host machine
+3. **Watch the terminal** for compilation messages
+4. **Check the browser** - it should auto-refresh with changes
+
+Happy coding! 🚀
