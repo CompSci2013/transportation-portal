@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { SearchFilters } from '../../../../models';
 
 @Component({
@@ -14,9 +14,9 @@ export class SearchFormComponent implements OnInit, OnChanges {
   @Output() search = new EventEmitter<SearchFilters>();
   @Output() reset = new EventEmitter<void>();
   
-  searchForm: FormGroup;
+  searchForm: UntypedFormGroup;
 
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: UntypedFormBuilder) {
     this.searchForm = this.fb.group({
       manufacturer: [''],
       model: [''],
