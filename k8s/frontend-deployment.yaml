@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: transport-frontend
+  namespace: transportation
+  labels:
+    app: transport-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: transport-frontend
+  template:
+    metadata:
+      labels:
+        app: transport-frontend
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: thor
+      containers:
+        - name: frontend
+          image: localhost/transport-frontend:v1.0.0
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 80
+              name: http
+          resources:
+            requests:
+              memory: '64Mi'
+              cpu: '50m'
+            limits:
+              memory: '128Mi'
+              cpu: '200m'
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 5

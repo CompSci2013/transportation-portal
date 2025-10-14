@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: transport-frontend
+  namespace: transportation
+  labels:
+    app: transport-frontend
+spec:
+  type: ClusterIP
+  selector:
+    app: transport-frontend
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http
