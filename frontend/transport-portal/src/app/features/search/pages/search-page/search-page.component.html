@@ -40,10 +40,17 @@
     <div class="results-header">
       <h2>Results</h2>
       <p class="results-count">{{ totalRecords }} aircraft found</p>
+      <button
+        class="popout-toggle"
+        (click)="toggleResultsPopout()"
+        [title]="popouts.isOpen('results') ? 'Return results to this window' : 'Open results in new window'">
+        {{ popouts.isOpen('results') ? '⬇ Pop In' : '⬆ Pop Out' }}
+      </button>
     </div>
 
-    <!-- Results Table -->
+    <!-- Results Table (hidden when popped out) -->
     <app-results-table
+      *ngIf="!popouts.isOpen('results')"
       [vehicles]="vehicles"
       [loading]="loading"
       [totalRecords]="totalRecords"

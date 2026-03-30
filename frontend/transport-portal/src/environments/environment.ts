@@ -1,4 +1,4 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://transportation.minilab/api/v1'
+  apiUrl: 'http://192.168.0.244:4310/api/v1'
 };

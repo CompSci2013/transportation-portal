@@ -4,9 +4,12 @@ import {
   OnDestroy,
   ViewChild,
   ElementRef,
+  Injector,
 } from '@angular/core';
+import { PopOutManagerService, PopOutOrchestrator, PopOutMessageType } from '@halolabs/ngx-popout';
 import { StateManagementService } from '../../../../core/services/state-management.service';
 import { SearchState, SearchFilters } from '../../../../models';
+import { ResultsTableComponent } from '../../components/results-table/results-table.component';
 import { Subscription } from 'rxjs';
 
 interface HistogramData {
@@ -18,6 +21,7 @@ interface HistogramData {
   selector: 'app-search-page',
   templateUrl: './search-page.component.html',
   styleUrls: ['./search-page.component.scss'],
+  providers: [PopOutManagerService, PopOutOrchestrator],
 })
 export class SearchPageComponent implements OnInit, OnDestroy {
   @ViewChild('resultsSection', { read: ElementRef })
@@ -29,11 +33,45 @@ export class SearchPageComponent implements OnInit, OnDestroy {
   state: SearchState | null = null;
   pickerClearTrigger: number = 0;
 
-  constructor(private stateService: StateManagementService) {}
+  constructor(
+    private stateService: StateManagementService,
+    public popouts: PopOutOrchestrator,
+    private injector: Injector
+  ) {}
 
   ngOnInit(): void {
+    // Register popout-able components
+    this.popouts.register('results', ResultsTableComponent, { width: 1400, height: 800 });
+    this.popouts.initialize(this.injector);
+
+    // Handle events from popped-out results table
+    this.popouts.messages$.subscribe(({ popoutId, message }) => {
+      if (popoutId === 'results' && message.type === PopOutMessageType.COMPONENT_OUTPUT) {
+        const { outputName, data } = message.payload;
+        switch (outputName) {
+          case 'pageChange': this.onPageChange(data); break;
+          case 'pageSizeChange': this.onPageSizeChange(data); break;
+          case 'sortChange': this.onSortChange(data); break;
+          case 'filterChange': this.onFilterChange(data); break;
+          case 'viewDetails': this.onViewDetails(data); break;
+        }
+      }
+    });
+
+    // Subscribe to state and sync popouts when data changes
     this.subscription = this.state$.subscribe((state) => {
       this.state = state;
+
+      // Keep popout in sync with latest data
+      if (this.popouts.isOpen('results')) {
+        this.popouts.syncInputs('results', {
+          vehicles: state.results,
+          loading: state.loading,
+          totalRecords: state.totalResults,
+          currentPage: state.filters.page || 1,
+          pageSize: state.filters.size || 20,
+        });
+      }
     });
   }
 
@@ -120,6 +158,24 @@ export class SearchPageComponent implements OnInit, OnDestroy {
 
   onManufacturerBarClick(manufacturer: string): void {
     this.stateService.selectManufacturer(manufacturer);
+  }
+
+  toggleResultsPopout(): void {
+    this.popouts.toggle('results', {
+      vehicles: this.vehicles,
+      loading: this.loading,
+      totalRecords: this.totalRecords,
+      currentPage: this.currentPage,
+      pageSize: this.pageSize,
+      filterRegistration: this.currentFilters.filterRegistration || '',
+      filterManufacturer: this.currentFilters.filterManufacturer || '',
+      filterModel: this.currentFilters.filterModel || '',
+      filterYearMin: this.currentFilters.filterYearMin || null,
+      filterYearMax: this.currentFilters.filterYearMax || null,
+      filterCategory: this.currentFilters.filterCategory || '',
+      filterState: this.currentFilters.filterState || '',
+      title: 'Aircraft Search Results',
+    });
   }
 
   onViewDetails(transportId: string): void {

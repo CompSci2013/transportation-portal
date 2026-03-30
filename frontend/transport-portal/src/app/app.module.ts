@@ -27,6 +27,8 @@ import { registerLocaleData } from '@angular/common';
 import en from '@angular/common/locales/en';
 import { NZ_I18N, en_US } from 'ng-zorro-antd/i18n';
 
+import { PopoutModule } from '@halolabs/ngx-popout';
+
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 
@@ -75,6 +77,7 @@ import { PaginationComponent } from './shared/components/pagination/pagination.c
     NzCheckboxModule,
     NzBadgeModule,
     NzToolTipModule,
+    PopoutModule,
   ],
   providers: [{ provide: NZ_I18N, useValue: en_US }],
   bootstrap: [AppComponent],

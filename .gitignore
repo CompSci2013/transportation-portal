@@ -46,3 +46,4 @@ etl/data/**/extracted/
 **/.env.local
 **/.env.*.local
 docs/prompts/
+.npmrc

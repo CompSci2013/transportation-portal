@@ -46,6 +46,22 @@
       color: #333;
     }
 
+    .popout-toggle {
+      padding: 0.4rem 1rem;
+      border: 1px solid #d9d9d9;
+      border-radius: 4px;
+      background: #fff;
+      color: #333;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+
+      &:hover {
+        border-color: #1890ff;
+        color: #1890ff;
+      }
+    }
+
     .results-count {
       margin: 0;
       font-size: 0.95rem;
