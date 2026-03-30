@@ -175,19 +175,13 @@ export class SearchPageComponent implements OnInit, OnDestroy {
   }
 
   toggleManufacturerChartPopout(): void {
-    const data = {
+    this.popouts.toggle('manufacturer-chart', {
       title: 'Aircraft by Manufacturer',
       data: this.manufacturerHistogramData,
       clickable: true,
       selectedLabel: this.selectedManufacturer,
       maxHeight: '100%',
-    };
-    const opened = this.popouts.toggle('manufacturer-chart', data);
-    // Force ngOnChanges after portal renders — openPopOut sets properties
-    // via direct assignment which doesn't trigger OnChanges automatically
-    if (opened) {
-      setTimeout(() => this.popouts.syncInputs('manufacturer-chart', data), 0);
-    }
+    });
   }
 
   toggleResultsPopout(): void {
