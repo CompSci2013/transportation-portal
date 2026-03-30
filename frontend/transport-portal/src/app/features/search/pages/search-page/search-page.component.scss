@@ -46,6 +46,26 @@
       color: #333;
     }
 
+    .histogram-container {
+      position: relative;
+    }
+
+    .histogram-popout {
+      position: absolute;
+      top: 0;
+      right: 0;
+      z-index: 1;
+    }
+
+    .popout-placeholder {
+      padding: 3rem 2rem;
+      text-align: center;
+      color: #999;
+      border: 1px dashed #d9d9d9;
+      border-radius: 4px;
+      font-style: italic;
+    }
+
     .popout-toggle {
       padding: 0.4rem 1rem;
       border: 1px solid #d9d9d9;

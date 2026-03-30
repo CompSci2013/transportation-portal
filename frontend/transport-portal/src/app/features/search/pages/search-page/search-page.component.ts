@@ -10,6 +10,7 @@ import { PopOutManagerService, PopOutOrchestrator, PopOutMessageType } from '@ha
 import { StateManagementService } from '../../../../core/services/state-management.service';
 import { SearchState, SearchFilters } from '../../../../models';
 import { ResultsTableComponent } from '../../components/results-table/results-table.component';
+import { HistogramComponent } from '../../../../shared/components/histogram/histogram.component';
 import { Subscription } from 'rxjs';
 
 interface HistogramData {
@@ -42,12 +43,15 @@ export class SearchPageComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     // Register popout-able components
     this.popouts.register('results', ResultsTableComponent, { width: 1400, height: 800 });
+    this.popouts.register('manufacturer-chart', HistogramComponent, { width: 800, height: 600 });
     this.popouts.initialize(this.injector);
 
-    // Handle events from popped-out results table
+    // Handle events from popped-out components
     this.popouts.messages$.subscribe(({ popoutId, message }) => {
-      if (popoutId === 'results' && message.type === PopOutMessageType.COMPONENT_OUTPUT) {
-        const { outputName, data } = message.payload;
+      if (message.type !== PopOutMessageType.COMPONENT_OUTPUT) return;
+      const { outputName, data } = message.payload;
+
+      if (popoutId === 'results') {
         switch (outputName) {
           case 'pageChange': this.onPageChange(data); break;
           case 'pageSizeChange': this.onPageSizeChange(data); break;
@@ -56,13 +60,17 @@ export class SearchPageComponent implements OnInit, OnDestroy {
           case 'viewDetails': this.onViewDetails(data); break;
         }
       }
+
+      if (popoutId === 'manufacturer-chart' && outputName === 'barClick') {
+        this.onManufacturerBarClick(data);
+      }
     });
 
     // Subscribe to state and sync popouts when data changes
     this.subscription = this.state$.subscribe((state) => {
       this.state = state;
 
-      // Keep popout in sync with latest data
+      // Keep popouts in sync with latest data
       if (this.popouts.isOpen('results')) {
         this.popouts.syncInputs('results', {
           vehicles: state.results,
@@ -70,6 +78,12 @@ export class SearchPageComponent implements OnInit, OnDestroy {
           totalRecords: state.totalResults,
           currentPage: state.filters.page || 1,
           pageSize: state.filters.size || 20,
+        });
+      }
+      if (this.popouts.isOpen('manufacturer-chart')) {
+        this.popouts.syncInputs('manufacturer-chart', {
+          data: this.manufacturerHistogramData,
+          selectedLabel: state.selectedManufacturer || null,
         });
       }
     });
@@ -158,6 +172,16 @@ export class SearchPageComponent implements OnInit, OnDestroy {
 
   onManufacturerBarClick(manufacturer: string): void {
     this.stateService.selectManufacturer(manufacturer);
+  }
+
+  toggleManufacturerChartPopout(): void {
+    this.popouts.toggle('manufacturer-chart', {
+      title: 'Aircraft by Manufacturer',
+      data: this.manufacturerHistogramData,
+      clickable: true,
+      selectedLabel: this.selectedManufacturer,
+      maxHeight: '100%',
+    });
   }
 
   toggleResultsPopout(): void {

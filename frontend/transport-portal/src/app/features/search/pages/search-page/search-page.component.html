@@ -74,14 +74,26 @@
     <div *ngIf="state?.statistics" class="statistics-section">
       <h2>Statistics</h2>
       <div class="histograms-grid">
-        <app-histogram
-          [title]="'Aircraft by Manufacturer'"
-          [data]="manufacturerHistogramData"
-          [clickable]="true"
-          [selectedLabel]="selectedManufacturer"
-          [maxHeight]="'400px'"
-          (barClick)="onManufacturerBarClick($event)"
-        ></app-histogram>
+        <div class="histogram-container">
+          <button
+            class="popout-toggle histogram-popout"
+            (click)="toggleManufacturerChartPopout()"
+            [title]="popouts.isOpen('manufacturer-chart') ? 'Return chart to this window' : 'Open chart in new window'">
+            {{ popouts.isOpen('manufacturer-chart') ? '⬇ Pop In' : '⬆ Pop Out' }}
+          </button>
+          <app-histogram
+            *ngIf="!popouts.isOpen('manufacturer-chart')"
+            [title]="'Aircraft by Manufacturer'"
+            [data]="manufacturerHistogramData"
+            [clickable]="true"
+            [selectedLabel]="selectedManufacturer"
+            [maxHeight]="'400px'"
+            (barClick)="onManufacturerBarClick($event)"
+          ></app-histogram>
+          <div *ngIf="popouts.isOpen('manufacturer-chart')" class="popout-placeholder">
+            Chart is in a separate window
+          </div>
+        </div>
 
         <app-histogram
           [title]="'Models by Manufacturer'"
